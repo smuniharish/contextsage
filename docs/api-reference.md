@@ -2,20 +2,20 @@
 
 ## Public API
 
-The entire public surface of ContextIQ is:
+The entire public surface of ContextSage is:
 
 ```python
-from contextiq import IntelligentSummarizationMiddleware
+from contextsage import IntelligentSummarizationMiddleware
 ```
 
-::: contextiq.IntelligentSummarizationMiddleware
+::: contextsage.IntelligentSummarizationMiddleware
 
 See [Configuration](configuration.md) for every constructor parameter.
 
 ## Exceptions
 
-`contextiq.exceptions` defines the package's exception hierarchy, all
-rooted at `ContextIQError`:
+`contextsage.exceptions` defines the package's exception hierarchy, all
+rooted at `ContextSageError`:
 
 - `BudgetError` / `TokenCountingError` — raised for invalid/inconsistent
   budget configuration or unrecoverable token-counting failures.
@@ -42,7 +42,7 @@ rooted at `ContextIQError`:
 
 ## Token counting
 
-`contextiq.budget.tokens` provides the `TokenCounter` abstract base class and
+`contextsage.budget.tokens` provides the `TokenCounter` abstract base class and
 its only built-in implementation, `TiktokenTokenCounter` (wrap it in
 `CachingTokenCounter` for a bounded LRU cache over raw text — this is what
 `create_default_token_counter` does).
@@ -71,7 +71,7 @@ internal-but-supported extension point, not a plugin registry.
 
 ## Structural content parsers
 
-`contextiq.parsers` provides the `ContentParser` abstract base class, a
+`contextsage.parsers` provides the `ContentParser` abstract base class, a
 `ParserRegistry`, and a `default_registry()` factory used by the structural
 signal detector. Built-in parsers: `JSONParser`, `TableParser`, `CodeParser`,
 `LogParser`, `ErrorParser`.
@@ -90,7 +90,7 @@ signal detector. Built-in parsers: `JSONParser`, `TableParser`, `CodeParser`,
   classification risk of naive lexer-guessing.
 - `LogParser`/`ErrorParser` are anchored to the public, well-known
   ELK/Logstash "grok" pattern vocabulary
-  (`contextiq.parsers.grok_patterns`) rather than ad hoc regexes.
+  (`contextsage.parsers.grok_patterns`) rather than ad hoc regexes.
 
 This registry is an internal/advanced extension point (per the "no public
 plugin architecture" design rule): ordinary `IntelligentSummarizationMiddleware`
@@ -103,7 +103,7 @@ while every other kind still falls back to the built-ins.
 
 ### Classification (distinct from parsing)
 
-`contextiq.classification.signals.StructuralSignalDetector` owns a
+`contextsage.classification.signals.StructuralSignalDetector` owns a
 separate, *always-on* enrichment step layered on top of whatever a parser
 detected: identifier extraction, and error-keyword/severity tagging. This
 applies uniformly regardless of which kind was detected, so it is
@@ -112,27 +112,27 @@ region is; this enrichment decides what to flag/extract no matter which
 kind won) — via `IntelligentSummarizationMiddleware(severity_pattern=...,
 error_keywords_pattern=..., identifier_patterns=...)`. Defaults:
 `DEFAULT_SEVERITY_PATTERN`, `DEFAULT_ERROR_KEYWORDS_PATTERN`,
-`DEFAULT_IDENTIFIER_PATTERNS` in `contextiq.classification.signals`.
+`DEFAULT_IDENTIFIER_PATTERNS` in `contextsage.classification.signals`.
 
 ## Internal engines
 
 The following modules are internal implementation details, not part of the
 supported public API (no stability guarantee across minor versions), but
 are documented for contributors and for anyone extending or debugging
-ContextIQ. See [`ARCHITECTURE_INTERNALS.md`](https://github.com/smuniharish/contextiq/blob/main/ARCHITECTURE_INTERNALS.md)
+ContextSage. See [`ARCHITECTURE_INTERNALS.md`](https://github.com/smuniharish/contextsage/blob/main/ARCHITECTURE_INTERNALS.md)
 in the repository for a guided tour, or read the module docstrings
 directly:
 
-- `contextiq.context.decomposition.ContextDecomposer`
-- `contextiq.classification.signals.StructuralSignalDetector`
-- `contextiq.importance.engine.ImportanceEngine`
-- `contextiq.relationships.engine.RelationshipEngine`
-- `contextiq.preservation.engine.PreservationEngine`
-- `contextiq.planning.planner.SummarizationPlanner`
-- `contextiq.transformation.engine.ContextTransformationEngine`
-- `contextiq.integrations.langgraph.adapter.LangGraphSummarizationAdapter`
-- `contextiq.integrations.langgraph_xai.provenance.ProvenanceManager`
-- `contextiq.validation.validator.SummaryValidator`
-- `contextiq.recovery.manager.RecoveryManager`
-- `contextiq.lineage.manager.LineageManager`
-- `contextiq.observability.events.ObservabilityHook`
+- `contextsage.context.decomposition.ContextDecomposer`
+- `contextsage.classification.signals.StructuralSignalDetector`
+- `contextsage.importance.engine.ImportanceEngine`
+- `contextsage.relationships.engine.RelationshipEngine`
+- `contextsage.preservation.engine.PreservationEngine`
+- `contextsage.planning.planner.SummarizationPlanner`
+- `contextsage.transformation.engine.ContextTransformationEngine`
+- `contextsage.integrations.langgraph.adapter.LangGraphSummarizationAdapter`
+- `contextsage.integrations.langgraph_xai.provenance.ProvenanceManager`
+- `contextsage.validation.validator.SummaryValidator`
+- `contextsage.recovery.manager.RecoveryManager`
+- `contextsage.lineage.manager.LineageManager`
+- `contextsage.observability.events.ObservabilityHook`

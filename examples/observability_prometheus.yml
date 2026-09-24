@@ -2,12 +2,12 @@
 #
 # Verified against real Prometheus + Grafana containers via Podman:
 #
-#   podman network create contextiq-obs
-#   podman run -d --name contextiq-prometheus --network contextiq-obs \
+#   podman network create contextsage-obs
+#   podman run -d --name contextsage-prometheus --network contextsage-obs \
 #     -p 9090:9090 \
 #     -v "${PWD}/examples/observability_prometheus.yml:/etc/prometheus/prometheus.yml:ro" \
 #     docker.io/prom/prometheus
-#   podman run -d --name contextiq-grafana --network contextiq-obs \
+#   podman run -d --name contextsage-grafana --network contextsage-obs \
 #     -p 3000:3000 \
 #     docker.io/grafana/grafana:11.4.0
 #
@@ -17,38 +17,38 @@
 # frontend's data source picker (`Datasource <uid> was not found` for every
 # panel, confirmed independent of dashboard JSON, org, or browser caching).
 # Recreating the same data source and dashboard against `11.4.0` rendered
-# real data immediately -- this is a Grafana bug, not a ContextIQ issue.
+# real data immediately -- this is a Grafana bug, not a ContextSage issue.
 #
 # Run examples/observability_prometheus.py itself inside a container on the
-# same `contextiq-obs` network (verified against a real Podman machine on
+# same `contextsage-obs` network (verified against a real Podman machine on
 # Windows -- host-to-guest port forwarding for arbitrary ports is often
 # blocked by local firewall policy, so scraping container-to-container is
 # both more portable and closer to how this looks in real deployments,
 # where the app and its scraped exporter run in the same cluster/network,
 # not on the operator's laptop):
 #
-#   podman run -d --name contextiq-app --network contextiq-obs \
+#   podman run -d --name contextsage-app --network contextsage-obs \
 #     -v "${PWD}:/workspace:ro" -w /workspace --env-file .env \
 #     python:3.13-slim sleep infinity
-#   podman exec -w /workspace contextiq-app \
+#   podman exec -w /workspace contextsage-app \
 #     pip install --quiet -e . prometheus_client langchain-openai python-dotenv
-#   podman exec -d -w /workspace/examples contextiq-app \
+#   podman exec -d -w /workspace/examples contextsage-app \
 #     python observability_prometheus.py
 #
 # The target below then resolves via Podman's embedded DNS for the
-# `contextiq-obs` network -- no host port publishing needed for scraping.
+# `contextsage-obs` network -- no host port publishing needed for scraping.
 #
 # In Grafana (http://localhost:3000, default admin/admin), add a Prometheus
-# data source pointing at http://contextiq-prometheus:9090 (both containers
-# share the `contextiq-obs` network) and graph `contextiq_summarizations_total`,
-# `contextiq_compression_ratio`, `contextiq_input_tokens`,
-# `contextiq_summary_tokens` (before vs. after summarization), or
-# `contextiq_latency_ms`.
+# data source pointing at http://contextsage-prometheus:9090 (both containers
+# share the `contextsage-obs` network) and graph `contextsage_summarizations_total`,
+# `contextsage_compression_ratio`, `contextsage_input_tokens`,
+# `contextsage_summary_tokens` (before vs. after summarization), or
+# `contextsage_latency_ms`.
 
 global:
   scrape_interval: 5s
 
 scrape_configs:
-  - job_name: contextiq
+  - job_name: contextsage
     static_configs:
-      - targets: ["contextiq-app:9109"]
+      - targets: ["contextsage-app:9109"]

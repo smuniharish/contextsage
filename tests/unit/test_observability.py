@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 
-from contextiq.observability.events import (
+from contextsage.observability.events import (
     LoggingObservabilityHook,
     NullObservabilityHook,
     SummarizationEvent,
@@ -84,18 +84,18 @@ def test_null_observability_hook_is_a_silent_no_op():
 def test_logging_observability_hook_emits_one_record_with_event_payload(caplog):
     hook = LoggingObservabilityHook()
     event = _sample_event()
-    with caplog.at_level(logging.INFO, logger="contextiq.observability"):
+    with caplog.at_level(logging.INFO, logger="contextsage.observability"):
         hook(event)
     assert len(caplog.records) == 1
     record = caplog.records[0]
-    assert record.message == "contextiq.summarization"
+    assert record.message == "contextsage.summarization"
     assert record.levelno == logging.INFO
-    assert record.contextiq == event.as_dict()  # type: ignore[attr-defined]
+    assert record.contextsage == event.as_dict()  # type: ignore[attr-defined]
 
 
 def test_logging_observability_hook_respects_custom_level(caplog):
     hook = LoggingObservabilityHook(level=logging.WARNING)
-    with caplog.at_level(logging.WARNING, logger="contextiq.observability"):
+    with caplog.at_level(logging.WARNING, logger="contextsage.observability"):
         hook(_sample_event())
     assert len(caplog.records) == 1
     assert caplog.records[0].levelno == logging.WARNING

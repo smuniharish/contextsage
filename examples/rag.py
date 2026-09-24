@@ -1,6 +1,6 @@
 """RAG / search results example.
 
-Demonstrates that ContextIQ preserves source identity and does not
+Demonstrates that ContextSage preserves source identity and does not
 collapse contradictory retrieved evidence into a single false certainty.
 Uses a real chat model (see examples/_llm.py); requires EXPLABS_API_KEY.
 """
@@ -10,7 +10,7 @@ from __future__ import annotations
 from langchain_core.messages import HumanMessage, ToolMessage
 
 from _llm import build_demo_model
-from contextiq import IntelligentSummarizationMiddleware
+from contextsage import IntelligentSummarizationMiddleware
 
 
 def main() -> None:

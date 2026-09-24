@@ -18,18 +18,18 @@ import re
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 
 from _llm import build_recording_model
-from contextiq import IntelligentSummarizationMiddleware
-from contextiq.budget.tokens import TiktokenTokenCounter, TokenCounter
-from contextiq.classification.signals import (
+from contextsage import IntelligentSummarizationMiddleware
+from contextsage.budget.tokens import TiktokenTokenCounter, TokenCounter
+from contextsage.classification.signals import (
     DEFAULT_ERROR_KEYWORDS_PATTERN,
     DEFAULT_IDENTIFIER_PATTERNS,
     DEFAULT_SEVERITY_PATTERN,
 )
-from contextiq.core.models import ContentSignals
-from contextiq.observability.events import ObservabilityHook, SummarizationEvent
-from contextiq.parsers.base import ContentParser
+from contextsage.core.models import ContentSignals
+from contextsage.observability.events import ObservabilityHook, SummarizationEvent
+from contextsage.parsers.base import ContentParser
 
-CUSTOM_SUMMARY_PROMPT_MARKER = "CONTEXTIQ-ALL-PARAMS-DEMO-PROMPT"
+CUSTOM_SUMMARY_PROMPT_MARKER = "CONTEXTSAGE-ALL-PARAMS-DEMO-PROMPT"
 ESCALATION_ID = "ESC-4482"
 WIDGET_CODE = "WGT#88214"
 
@@ -140,7 +140,7 @@ def build_large_ticket_conversation() -> list:
         ),
         # Small, identifier-bearing unit: stays MUST_PRESERVE and untouched.
         ToolMessage(content=ticket_report, tool_call_id="call-1", id="msg-3"),
-        # Large, repetitive, non-error unit: kept literal by ContextIQ (it is
+        # Large, repetitive, non-error unit: kept literal by ContextSage (it is
         # the region LangGraph's own model call is expected to compress),
         # which is exactly why trim_tokens_to_summarize matters downstream.
         ToolMessage(content=log_lines, tool_call_id="call-2", id="msg-3b"),

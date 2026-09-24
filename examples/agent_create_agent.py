@@ -26,8 +26,8 @@ from langchain.agents import create_agent
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 
 from _llm import build_demo_model
-from contextiq import IntelligentSummarizationMiddleware
-from contextiq.observability.events import SummarizationEvent
+from contextsage import IntelligentSummarizationMiddleware
+from contextsage.observability.events import SummarizationEvent
 
 INCIDENT_ID = "INC-9931"
 

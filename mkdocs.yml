@@ -1,7 +1,7 @@
-site_name: ContextIQ
+site_name: ContextSage
 site_description: Intelligent, production-grade context summarization for LangGraph/LangChain agents.
-repo_url: https://github.com/smuniharish/contextiq
-repo_name: smuniharish/contextiq
+repo_url: https://github.com/smuniharish/contextsage
+repo_name: smuniharish/contextsage
 edit_uri: edit/main/docs/
 
 theme:

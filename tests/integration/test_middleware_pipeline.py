@@ -8,8 +8,8 @@ import pytest
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, HumanMessage, RemoveMessage, ToolMessage
 
-from contextiq import IntelligentSummarizationMiddleware
-from contextiq.observability.events import SummarizationEvent
+from contextsage import IntelligentSummarizationMiddleware
+from contextsage.observability.events import SummarizationEvent
 
 
 def _fake_model(summary_text: str) -> GenericFakeChatModel:
@@ -82,7 +82,7 @@ async def test_middleware_async_path_mirrors_sync_behavior():
 
 @pytest.mark.integration
 def test_middleware_recovers_missing_facts_via_validation(monkeypatch):
-    """If the LLM 'forgets' a must-preserve fact, ContextIQ must restate it."""
+    """If the LLM 'forgets' a must-preserve fact, ContextSage must restate it."""
     middleware = IntelligentSummarizationMiddleware(
         model=_fake_model("Everything is fine now."),  # deliberately loses all facts
         trigger=("tokens", 50),

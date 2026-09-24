@@ -2,7 +2,7 @@
 
 All example scripts call ``build_demo_model()`` from this module instead of
 each defining their own scripted fake model. This means running an example
-makes a real network call and shows ContextIQ's actual behavior against a
+makes a real network call and shows ContextSage's actual behavior against a
 live LLM response, not a hand-written canned string.
 
 Configure the model via environment variables (loaded from a local ``.env``

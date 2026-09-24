@@ -12,7 +12,7 @@ import json
 from langchain_core.messages import HumanMessage, ToolMessage
 
 from _llm import build_demo_model
-from contextiq import IntelligentSummarizationMiddleware
+from contextsage import IntelligentSummarizationMiddleware
 
 
 def build_repetitive_json_payload() -> str:

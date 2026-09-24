@@ -23,7 +23,7 @@ latency_ms: float
 the LLM summarization call itself failed, so no summary text existed to
 validate), `"passed"` when every must-preserve fact and tool-call pairing
 survived, and `"failed_recovered"` when validation caught missing facts and
-`RecoveryManager` restated them — ContextIQ never returns an unvalidated
+`RecoveryManager` restated them — ContextSage never returns an unvalidated
 summary silently as "failed" with no remediation.
 
 `recovery_status` is `"none_needed"` when no recovery step ran,
@@ -31,7 +31,7 @@ summary silently as "failed" with no remediation.
 identified to restate, `"append_preserved_facts"` when a "preserved facts"
 message was appended after a validation failure, and
 `"deterministic_trim_fallback"` when the LLM summarization call itself
-failed and ContextIQ fell back to trimming plus a preserved-facts message.
+failed and ContextSage fell back to trimming plus a preserved-facts message.
 `fallback_used` is `True` for the latter two.
 
 ## What is never included
@@ -44,8 +44,8 @@ and status strings are recorded.
 
 By default (`observability_enabled=True`, the default), a
 `LoggingObservabilityHook` logs one structured record per operation at
-`INFO` level to the `contextiq.observability` logger, with the event
-attached as `extra={"contextiq": event.as_dict()}` so structured-logging
+`INFO` level to the `contextsage.observability` logger, with the event
+attached as `extra={"contextsage": event.as_dict()}` so structured-logging
 setups (e.g. `python-json-logger`) can serialize it directly.
 
 Set `observability_enabled=False` to install a `NullObservabilityHook`
@@ -59,12 +59,12 @@ Pass your own hook — any callable accepting a `SummarizationEvent` — via
 logger:
 
 ```python
-from contextiq import IntelligentSummarizationMiddleware
-from contextiq.observability.events import SummarizationEvent
+from contextsage import IntelligentSummarizationMiddleware
+from contextsage.observability.events import SummarizationEvent
 
 def send_to_metrics(event: SummarizationEvent) -> None:
-    my_metrics_client.record("contextiq.compression_ratio", event.compression_ratio)
-    my_metrics_client.record("contextiq.latency_ms", event.latency_ms)
+    my_metrics_client.record("contextsage.compression_ratio", event.compression_ratio)
+    my_metrics_client.record("contextsage.latency_ms", event.latency_ms)
 
 middleware = IntelligentSummarizationMiddleware(
     model=model,
@@ -73,11 +73,11 @@ middleware = IntelligentSummarizationMiddleware(
 ```
 
 See
-[`examples/observability_prometheus.py`](https://github.com/smuniharish/contextiq/blob/main/examples/observability_prometheus.py)
+[`examples/observability_prometheus.py`](https://github.com/smuniharish/contextsage/blob/main/examples/observability_prometheus.py)
 for a complete, runnable hook that records every `SummarizationEvent` field
 as Prometheus metrics and serves them on `/metrics` — verified end-to-end
 against real Prometheus + Grafana containers
-([`examples/observability_prometheus.yml`](https://github.com/smuniharish/contextiq/blob/main/examples/observability_prometheus.yml)
+([`examples/observability_prometheus.yml`](https://github.com/smuniharish/contextsage/blob/main/examples/observability_prometheus.yml)
 has the scrape config and exact commands to reproduce the stack).
 
 ## Tokens before vs. after summarization
@@ -96,7 +96,7 @@ can be graphed side by side — not just the ratio — because "went from how
 many tokens to how many tokens" is what you actually want to see on a
 dashboard, not just a derived percentage.
 
-![Grafana panel graphing contextiq_input_tokens_sum and contextiq_summary_tokens_sum as two series on the same timeseries chart, plus a "tokens saved" stat panel computed as their difference](images/observability-tokens-before-after.png)
+![Grafana panel graphing contextsage_input_tokens_sum and contextsage_summary_tokens_sum as two series on the same timeseries chart, plus a "tokens saved" stat panel computed as their difference](images/observability-tokens-before-after.png)
 
 The two series graphed here are real data from one run of the example
 against a real LLM. Note the compression ratio in this particular run is
@@ -118,4 +118,4 @@ A Grafana dashboard built from the metrics in
 `examples/observability_prometheus.py`, showing real (non-synthetic) data
 from an actual `IntelligentSummarizationMiddleware` run against a real LLM:
 
-![ContextIQ Grafana dashboard showing summarization compression ratio, latency, outcome counts, and token counts](images/observability-grafana-dashboard.png)
+![ContextSage Grafana dashboard showing summarization compression ratio, latency, outcome counts, and token counts](images/observability-grafana-dashboard.png)

@@ -5,14 +5,14 @@
 > Information preservation > raw token reduction.
 
 A smaller summary that loses a customer ID, a user correction, or a root
-cause is a failure, even if it saves tokens. ContextIQ's planner is
+cause is a failure, even if it saves tokens. ContextSage's planner is
 budget-aware *and* information-aware.
 
 ## Ownership boundary
 
-ContextIQ never reimplements semantic LLM summarization. It wraps
-LangChain's `SummarizationMiddleware` (`contextiq.integrations.langgraph.adapter.LangGraphSummarizationAdapter`)
-and configures it with an always-eligible internal trigger. ContextIQ owns
+ContextSage never reimplements semantic LLM summarization. It wraps
+LangChain's `SummarizationMiddleware` (`contextsage.integrations.langgraph.adapter.LangGraphSummarizationAdapter`)
+and configures it with an always-eligible internal trigger. ContextSage owns
 *whether* summarization runs and *what* is prepared for it; LangGraph owns
 *how many* messages to keep and the actual LLM-generated summary text.
 
@@ -49,7 +49,7 @@ Validation (SummaryValidator) -> Recovery (RecoveryManager) if needed
 Reconstruction (apply_transformed_units) -> Lineage/Observability/Provenance
 ```
 
-See the diagrams under [docs/diagrams](https://github.com/smuniharish/contextiq/tree/main/docs/diagrams)
+See the diagrams under [docs/diagrams](https://github.com/smuniharish/contextsage/tree/main/docs/diagrams)
 in the repository for rendered visuals of this pipeline and the individual
 engines.
 
@@ -100,10 +100,10 @@ from the loop:
    `RecoveryManager` falls back to a deterministic trim of the most recent
    `keep` messages, with a preserved-facts message prepended.
 
-## What ContextIQ is not
+## What ContextSage is not
 
-ContextIQ is not an agent framework, memory framework, or a replacement for
+ContextSage is not an agent framework, memory framework, or a replacement for
 LangGraph/LangChain, a general-purpose parser/document-processing
 framework, or a new plugin platform — there is no public plugin registry.
-See the project [README](https://github.com/smuniharish/contextiq#what-contextiq-is-not)
+See the project [README](https://github.com/smuniharish/contextsage#what-contextsage-is-not)
 for the full list.

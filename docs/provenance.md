@@ -1,6 +1,6 @@
 # Provenance
 
-ContextIQ uses [`langgraph-xai`](https://pypi.org/project/langgraph-xai/) as
+ContextSage uses [`langgraph-xai`](https://pypi.org/project/langgraph-xai/) as
 a direct runtime dependency to record provenance links
 between the original source messages and the resulting summary, without
 building or exposing a competing provenance/evidence data model.

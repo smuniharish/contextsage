@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from contextiq.context.decomposition import ContextDecomposer
-from contextiq.core.models import RelationType
-from contextiq.importance.engine import ImportanceEngine
-from contextiq.relationships.engine import RelationshipEngine, pair_tool_calls
+from contextsage.context.decomposition import ContextDecomposer
+from contextsage.core.models import RelationType
+from contextsage.importance.engine import ImportanceEngine
+from contextsage.relationships.engine import RelationshipEngine, pair_tool_calls
 
 
 def test_contradiction_detected_between_conflicting_status_values(

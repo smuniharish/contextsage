@@ -1,6 +1,6 @@
-# Contributing to ContextIQ
+# Contributing to ContextSage
 
-Thanks for your interest in contributing! ContextIQ is a focused,
+Thanks for your interest in contributing! ContextSage is a focused,
 production-grade package — see [`REQUIREMENTS_TRACEABILITY.md`](REQUIREMENTS_TRACEABILITY.md)
 for the architectural contract every change is expected to respect (in
 particular: no public plugin architecture, no forced heavyweight
@@ -13,8 +13,8 @@ of the internal pipeline engines (`ContextDecomposer`, `ImportanceEngine`,
 ## Getting started
 
 ```bash
-git clone https://github.com/smuniharish/contextiq.git
-cd contextiq
+git clone https://github.com/smuniharish/contextsage.git
+cd contextsage
 pip install -e ".[dev,examples]"
 pre-commit install
 ```
@@ -46,7 +46,7 @@ every commit once installed.
   to exercise the new parameter against a real LLM call.
 - **New default values or hardcoded patterns/thresholds** should be
   exposed as overridable constructor keyword arguments, following the
-  `DEFAULT_*` module-constant convention used throughout `src/contextiq/`.
+  `DEFAULT_*` module-constant convention used throughout `src/contextsage/`.
 - Keep [`REQUIREMENTS_TRACEABILITY.md`](REQUIREMENTS_TRACEABILITY.md) in
   sync when a change affects a numbered requirement's implementation or
   test coverage.

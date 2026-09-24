@@ -1,7 +1,7 @@
 """Mixed MCP output example: one ToolMessage containing prose, JSON, logs,
 and a code snippet all at once.
 
-Demonstrates that ContextIQ never treats the whole message as one content
+Demonstrates that ContextSage never treats the whole message as one content
 type: each region is decomposed and classified independently. Uses a real
 chat model (see examples/_llm.py); requires EXPLABS_API_KEY.
 """
@@ -13,7 +13,7 @@ import json
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 
 from _llm import build_demo_model
-from contextiq import IntelligentSummarizationMiddleware
+from contextsage import IntelligentSummarizationMiddleware
 
 
 def build_mixed_mcp_result() -> str:

@@ -1,6 +1,6 @@
 """Custom SQL content parser, built on a production-grade PyPI package.
 
-ContextIQ ships no built-in SQL parser (SQL is a domain-specific content
+ContextSage ships no built-in SQL parser (SQL is a domain-specific content
 kind, not one of the general-purpose structural kinds every agent context
 contains) -- exactly the extension point ``parsers`` exists for (see
 ``examples/all_parameters.py``'s ``EscalationTicketParser`` for the same
@@ -12,7 +12,7 @@ that text is *actually* well-formed SQL, so it would happily "tokenize"
 arbitrary English too, reproducing exactly the false-confidence
 misclassification risk a conservative classifier must avoid (the same
 reason Pygments'
-``guess_lexer`` was rejected for :class:`~contextiq.parsers.code_parser.CodeParser`).
+``guess_lexer`` was rejected for :class:`~contextsage.parsers.code_parser.CodeParser`).
 ``sqlglot`` is a real, dialect-aware parser/AST builder used in production
 by data-lineage and SQL-transpilation tooling: it can actually raise a
 ``ParseError`` on malformed or non-SQL text, giving this parser the same
@@ -32,9 +32,9 @@ from sqlglot import exp
 from sqlglot.errors import SqlglotError
 
 from _llm import build_demo_model
-from contextiq import IntelligentSummarizationMiddleware
-from contextiq.core.models import ContentSignals
-from contextiq.parsers.base import ContentParser
+from contextsage import IntelligentSummarizationMiddleware
+from contextsage.core.models import ContentSignals
+from contextsage.parsers.base import ContentParser
 
 #: Cheap, always-available first signal: does the text even *start* like a
 #: SQL statement? Only when this matches does sqlglot's heavier, real
@@ -110,7 +110,7 @@ def build_diagnostic_conversation() -> list:
     The SQL query is its own message (a realistic "query tool" result,
     distinct from a "log tool" result -- mirrors ``all_parameters.py``'s
     ``get_escalations``/``get_worker_logs`` split) so it reaches
-    :class:`~contextiq.classification.signals.StructuralSignalDetector` as
+    :class:`~contextsage.classification.signals.StructuralSignalDetector` as
     its own region, entirely as "everything else" text -- not fenced, not
     JSON -- where only a registered SQL parser can tell it apart from
     ``TEXT``.

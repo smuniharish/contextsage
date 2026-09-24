@@ -1,6 +1,6 @@
 """Recovery example.
 
-Demonstrates ContextIQ's fail-safe behavior when the underlying LLM call
+Demonstrates ContextSage's fail-safe behavior when the underlying LLM call
 fails entirely: it falls back to a deterministic trim while explicitly
 restating any must-preserve facts, rather than corrupting the conversation
 or silently losing critical information.
@@ -15,7 +15,7 @@ from __future__ import annotations
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, HumanMessage
 
-from contextiq import IntelligentSummarizationMiddleware
+from contextsage import IntelligentSummarizationMiddleware
 
 
 class AlwaysFailingModel(BaseChatModel):

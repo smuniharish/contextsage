@@ -6,8 +6,8 @@ from dataclasses import replace
 
 from langchain_core.messages import HumanMessage
 
-from contextiq.context.decomposition import ContextDecomposer
-from contextiq.core.reconstruction import apply_transformed_units, content_signal_counts
+from contextsage.context.decomposition import ContextDecomposer
+from contextsage.core.reconstruction import apply_transformed_units, content_signal_counts
 
 
 def test_untouched_units_return_the_same_message_object(token_counter):
@@ -21,7 +21,7 @@ def test_transformed_units_rebuild_message_content(token_counter):
     message = HumanMessage(content="hello world", id="h1")
     units = ContextDecomposer(token_counter).decompose([message])
     transformed = [
-        replace(u, content="HELLO", metadata={**u.metadata, "contextiq_transformed": True})
+        replace(u, content="HELLO", metadata={**u.metadata, "contextsage_transformed": True})
         for u in units
     ]
     rebuilt = apply_transformed_units([message], transformed)

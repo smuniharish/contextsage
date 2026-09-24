@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from contextiq.context.decomposition import ContextDecomposer
-from contextiq.core.models import PlanTarget, RegionKind, SummarizationPlan
-from contextiq.transformation.engine import ContextTransformationEngine
+from contextsage.context.decomposition import ContextDecomposer
+from contextsage.core.models import PlanTarget, RegionKind, SummarizationPlan
+from contextsage.transformation.engine import ContextTransformationEngine
 
 
 def test_transform_reduces_log_heavy_units(token_counter):
@@ -50,7 +50,7 @@ def test_transform_leaves_non_targeted_units_untouched(token_counter):
 def test_transform_fails_safe_when_transformer_raises(monkeypatch, token_counter):
     from langchain_core.messages import ToolMessage
 
-    from contextiq.exceptions import TransformationError
+    from contextsage.exceptions import TransformationError
 
     units = ContextDecomposer(token_counter).decompose(
         [ToolMessage(content='{"a": 1}', tool_call_id="c1", id="t1")]
@@ -61,7 +61,7 @@ def test_transform_fails_safe_when_transformer_raises(monkeypatch, token_counter
     def _boom(_text: str) -> str:
         raise TransformationError("boom")
 
-    import contextiq.transformation.engine as engine_module
+    import contextsage.transformation.engine as engine_module
 
     monkeypatch.setitem(engine_module._TRANSFORMERS, RegionKind.JSON, _boom)
 

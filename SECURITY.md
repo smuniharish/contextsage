@@ -2,7 +2,7 @@
 
 ## Supported Versions
 
-ContextIQ is currently pre-1.0 (`0.x`). Security fixes are made against
+ContextSage is currently pre-1.0 (`0.x`). Security fixes are made against
 the latest released `0.x` version only; there is no long-term support
 branch yet.
 
@@ -15,7 +15,7 @@ branch yet.
 Please **do not** open a public GitHub issue for security vulnerabilities.
 
 Instead, report privately via GitHub's
-[private vulnerability reporting](https://github.com/smuniharish/contextiq/security/advisories/new)
+[private vulnerability reporting](https://github.com/smuniharish/contextsage/security/advisories/new)
 feature, or email the maintainer listed in `pyproject.toml`
 (`authors`).
 
@@ -32,7 +32,7 @@ in `CHANGELOG.md`.
 
 ## Scope notes
 
-ContextIQ processes agent conversation content (including tool output) in
+ContextSage processes agent conversation content (including tool output) in
 order to decompose, classify, and summarize it. It does not execute code,
 evaluate SQL, or otherwise act on the content it inspects — parsers such
 as `CodeParser` (via `tree-sitter`) and the `sqlglot`-based example SQL

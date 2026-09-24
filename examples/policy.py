@@ -7,17 +7,17 @@ Run with:
 The same moderately-important tool output is classified under each policy
 to show that ``policy`` genuinely changes preservation outcomes (not just
 documentation text) — see
-``contextiq.preservation.engine._POLICY_THRESHOLDS``.
+``contextsage.preservation.engine._POLICY_THRESHOLDS``.
 """
 
 from __future__ import annotations
 
 from langchain_core.messages import ToolMessage
 
-from contextiq.budget.tokens import TiktokenTokenCounter
-from contextiq.context.decomposition import ContextDecomposer
-from contextiq.importance.engine import ImportanceEngine
-from contextiq.preservation.engine import PreservationEngine
+from contextsage.budget.tokens import TiktokenTokenCounter
+from contextsage.context.decomposition import ContextDecomposer
+from contextsage.importance.engine import ImportanceEngine
+from contextsage.preservation.engine import PreservationEngine
 
 
 def main() -> None:

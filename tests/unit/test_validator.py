@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from langchain_core.messages import AIMessage, ToolMessage
 
-from contextiq.core.models import Relationship, RelationType
-from contextiq.validation.validator import SummaryValidator
+from contextsage.core.models import Relationship, RelationType
+from contextsage.validation.validator import SummaryValidator
 
 
 def test_validate_passes_when_all_facts_present():

@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Initial public release of `contextiq`.
+- Initial public release of `contextsage`.
 - `IntelligentSummarizationMiddleware`: a production-grade, information-aware
   replacement for LangGraph's `SummarizationMiddleware`.
 - Heterogeneous context decomposition (`context/decomposition.py`) — a
@@ -36,5 +36,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   runnable example suite (`examples/`) exercising every constructor
   parameter against a real LLM.
 
-[Unreleased]: https://github.com/smuniharish/contextiq/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/smuniharish/contextiq/releases/tag/v0.1.0
+[Unreleased]: https://github.com/smuniharish/contextsage/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/smuniharish/contextsage/releases/tag/v0.1.0

@@ -1,4 +1,4 @@
-"""Basic ContextIQ usage: the "extremely simple" primary experience.
+"""Basic ContextSage usage: the "extremely simple" primary experience.
 
 Run with:
 
@@ -14,7 +14,7 @@ from __future__ import annotations
 from langchain_core.messages import AIMessage, HumanMessage
 
 from _llm import build_demo_model
-from contextiq import IntelligentSummarizationMiddleware
+from contextsage import IntelligentSummarizationMiddleware
 
 
 def main() -> None:

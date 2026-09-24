@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from langchain_core.messages import AIMessage, HumanMessage
 
-from contextiq.core.models import ValidationFinding, ValidationResult
-from contextiq.recovery.manager import RecoveryManager
+from contextsage.core.models import ValidationFinding, ValidationResult
+from contextsage.recovery.manager import RecoveryManager
 
 
 def test_recover_from_validation_failure_restates_missing_facts():

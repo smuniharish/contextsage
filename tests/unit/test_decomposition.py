@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from contextiq.context.decomposition import ContextDecomposer
-from contextiq.core.models import RegionKind
+from contextsage.context.decomposition import ContextDecomposer
+from contextsage.core.models import RegionKind
 
 
 def test_decompose_splits_mixed_content_into_multiple_kinds(mixed_tool_message, token_counter):

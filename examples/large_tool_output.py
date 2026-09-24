@@ -1,7 +1,7 @@
 """Large tool output example: a single huge MCP-style result mixing
 explanatory text, JSON, and 100+ repeated log lines.
 
-Demonstrates that ContextIQ deterministically compresses the log-heavy
+Demonstrates that ContextSage deterministically compresses the log-heavy
 portion while protecting the transaction id and root cause, instead of
 forcing the whole 100K-token result into one semantic LLM summarization
 call. Uses a real chat model (see examples/_llm.py); requires EXPLABS_API_KEY.
@@ -14,7 +14,7 @@ import json
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 
 from _llm import build_demo_model
-from contextiq import IntelligentSummarizationMiddleware
+from contextsage import IntelligentSummarizationMiddleware
 
 
 def build_large_tool_result() -> str:

@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import pytest
 
-from contextiq.core.models import BudgetReport
-from contextiq.exceptions import PlanningError
-from contextiq.planning.trigger import evaluate_trigger
+from contextsage.core.models import BudgetReport
+from contextsage.exceptions import PlanningError
+from contextsage.planning.trigger import evaluate_trigger
 
 
 def _report(current_input_tokens: int, maximum_context_tokens: int = 1000) -> BudgetReport:

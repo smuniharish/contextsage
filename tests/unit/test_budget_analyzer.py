@@ -5,8 +5,8 @@ from __future__ import annotations
 import pytest
 from langchain_core.messages import HumanMessage
 
-from contextiq.budget.analyzer import BudgetAnalyzer, BudgetConfig, infer_max_context_tokens
-from contextiq.exceptions import BudgetError
+from contextsage.budget.analyzer import BudgetAnalyzer, BudgetConfig, infer_max_context_tokens
+from contextsage.exceptions import BudgetError
 
 
 def test_budget_config_rejects_invalid_values():

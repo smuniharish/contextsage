@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "contextiq"
+name = "contextsage"
 version = "0.1.0"
 description = "Intelligent, production-grade context summarization for LangGraph/LangChain agents."
 readme = "README.md"
@@ -69,14 +69,14 @@ examples = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/smuniharish/contextiq"
-Documentation = "https://contextiq.readthedocs.io"
-Repository = "https://github.com/smuniharish/contextiq"
-Issues = "https://github.com/smuniharish/contextiq/issues"
-Changelog = "https://github.com/smuniharish/contextiq/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/smuniharish/contextsage"
+Documentation = "https://contextsage.readthedocs.io"
+Repository = "https://github.com/smuniharish/contextsage"
+Issues = "https://github.com/smuniharish/contextsage/issues"
+Changelog = "https://github.com/smuniharish/contextsage/blob/main/CHANGELOG.md"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/contextiq"]
+packages = ["src/contextsage"]
 
 [tool.ruff]
 line-length = 100

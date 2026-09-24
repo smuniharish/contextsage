@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from contextiq.lineage.manager import (
-    CONTEXTIQ_SUMMARY_ID_PREFIX,
+from contextsage.lineage.manager import (
+    CONTEXTSAGE_SUMMARY_ID_PREFIX,
     LineageManager,
     find_prior_summary_ids,
 )
@@ -12,7 +12,7 @@ from contextiq.lineage.manager import (
 def test_next_summary_id_has_stable_prefix():
     manager = LineageManager()
     summary_id = manager.next_summary_id()
-    assert summary_id.startswith(CONTEXTIQ_SUMMARY_ID_PREFIX)
+    assert summary_id.startswith(CONTEXTSAGE_SUMMARY_ID_PREFIX)
 
 
 def test_record_and_get_round_trip():

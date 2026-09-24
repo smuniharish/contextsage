@@ -24,8 +24,8 @@ from deepagents import create_deep_agent
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 
 from _llm import build_demo_model
-from contextiq import IntelligentSummarizationMiddleware
-from contextiq.observability.events import SummarizationEvent
+from contextsage import IntelligentSummarizationMiddleware
+from contextsage.observability.events import SummarizationEvent
 
 TICKET_ID = "ESC-7741"
 

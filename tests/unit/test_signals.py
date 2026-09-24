@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from contextiq.classification.signals import StructuralSignalDetector, normalize_for_repetition
-from contextiq.core.models import RegionKind
+from contextsage.classification.signals import StructuralSignalDetector, normalize_for_repetition
+from contextsage.core.models import RegionKind
 
 
 def test_detects_json():

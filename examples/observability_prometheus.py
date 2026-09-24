@@ -1,4 +1,4 @@
-"""Real external telemetry integration: ContextIQ -> Prometheus -> Grafana.
+"""Real external telemetry integration: ContextSage -> Prometheus -> Grafana.
 
 `docs/observability.md` documents `observability_hook=` as a plain callable
 that receives a `SummarizationEvent`. This example proves that claim against
@@ -32,36 +32,36 @@ from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from prometheus_client import Counter, Histogram, start_http_server
 
 from _llm import build_demo_model
-from contextiq import IntelligentSummarizationMiddleware
-from contextiq.observability.events import SummarizationEvent
+from contextsage import IntelligentSummarizationMiddleware
+from contextsage.observability.events import SummarizationEvent
 
 # One metric per SummarizationEvent field that varies meaningfully across
 # operations. Labels use only the low-cardinality status/reason strings
 # documented in docs/observability.md -- never raw content.
 SUMMARIZATIONS_TOTAL = Counter(
-    "contextiq_summarizations_total",
+    "contextsage_summarizations_total",
     "Number of IntelligentSummarizationMiddleware operations, by outcome.",
     labelnames=("validation_status", "recovery_status", "fallback_used"),
 )
 INPUT_TOKENS = Histogram(
-    "contextiq_input_tokens",
+    "contextsage_input_tokens",
     "Observed input token count *before* summarization (at trigger time).",
     buckets=(50, 100, 250, 500, 1000, 2500, 5000, 10_000),
 )
 SUMMARY_TOKENS = Histogram(
-    "contextiq_summary_tokens",
+    "contextsage_summary_tokens",
     "Token count of the produced summary *after* summarization -- graph "
-    "alongside contextiq_input_tokens to see the actual before/after "
+    "alongside contextsage_input_tokens to see the actual before/after "
     "reduction, not just the derived compression_ratio.",
     buckets=(50, 100, 250, 500, 1000, 2500, 5000, 10_000),
 )
 COMPRESSION_RATIO = Histogram(
-    "contextiq_compression_ratio",
+    "contextsage_compression_ratio",
     "summary_tokens / input_tokens for each summarization operation.",
     buckets=(0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.75, 1.0),
 )
 LATENCY_MS = Histogram(
-    "contextiq_latency_ms",
+    "contextsage_latency_ms",
     "End-to-end before_model latency in milliseconds.",
     buckets=(50, 100, 250, 500, 1000, 2500, 5000, 10_000, 30_000),
 )

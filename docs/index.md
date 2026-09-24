@@ -1,12 +1,12 @@
-# ContextIQ
+# ContextSage
 
-ContextIQ is an intelligent, production-grade replacement for LangGraph's
+ContextSage is an intelligent, production-grade replacement for LangGraph's
 built-in `SummarizationMiddleware`. It adds an information-aware planning
 layer on top of LangGraph/LangChain's existing summarization mechanism.
 
 ```python
 from langchain.agents import create_agent
-from contextiq import IntelligentSummarizationMiddleware
+from contextsage import IntelligentSummarizationMiddleware
 
 middleware = IntelligentSummarizationMiddleware(
     model=model,

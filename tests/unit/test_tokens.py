@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from langchain_core.messages import AIMessage, HumanMessage
 
-from contextiq.budget.tokens import (
+from contextsage.budget.tokens import (
     CachingTokenCounter,
     TiktokenTokenCounter,
     create_default_token_counter,

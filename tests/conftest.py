@@ -1,4 +1,4 @@
-"""Shared pytest fixtures for the ContextIQ test suite."""
+"""Shared pytest fixtures for the ContextSage test suite."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ import json
 import pytest
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 
-from contextiq.budget.tokens import TiktokenTokenCounter
+from contextsage.budget.tokens import TiktokenTokenCounter
 
 
 @pytest.fixture

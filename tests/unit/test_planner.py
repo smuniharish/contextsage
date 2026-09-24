@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from contextiq.context.decomposition import ContextDecomposer
-from contextiq.importance.engine import ImportanceEngine
-from contextiq.planning.planner import SummarizationPlanner
-from contextiq.preservation.engine import PreservationEngine
-from contextiq.relationships.engine import RelationshipEngine
+from contextsage.context.decomposition import ContextDecomposer
+from contextsage.importance.engine import ImportanceEngine
+from contextsage.planning.planner import SummarizationPlanner
+from contextsage.preservation.engine import PreservationEngine
+from contextsage.relationships.engine import RelationshipEngine
 
 
 def _classified_units(messages, token_counter):

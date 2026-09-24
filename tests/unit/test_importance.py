@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from contextiq.context.decomposition import ContextDecomposer
-from contextiq.importance.engine import ImportanceEngine
+from contextsage.context.decomposition import ContextDecomposer
+from contextsage.importance.engine import ImportanceEngine
 
 
 def test_user_correction_scores_high(correction_conversation, token_counter):
