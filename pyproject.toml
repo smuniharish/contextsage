@@ -1,0 +1,109 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "contextiq"
+version = "0.1.0"
+description = "Intelligent, production-grade context summarization for LangGraph/LangChain agents."
+readme = "README.md"
+license = "Apache-2.0"
+authors = [{ name = "S MUNI HARISH", email = "samamuniharish@gmail.com" }]
+requires-python = ">=3.12"
+keywords = [
+    "langgraph",
+    "langchain",
+    "llm",
+    "agents",
+    "summarization",
+    "context-engineering",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
+dependencies = [
+    "langgraph>=1.0.0",
+    "langchain>=1.0.0",
+    "langgraph-xai>=0.1.0",
+    "pydantic>=2.7",
+    "tiktoken>=0.7",
+    "tree-sitter>=0.23",
+    "tree-sitter-python>=0.23",
+    "tree-sitter-javascript>=0.23",
+    "tree-sitter-typescript>=0.23",
+    "tree-sitter-go>=0.23",
+    "tree-sitter-java>=0.23",
+    "tree-sitter-rust>=0.23",
+    "tree-sitter-c>=0.23",
+    "tree-sitter-cpp>=0.23",
+    "tree-sitter-ruby>=0.23",
+    "tree-sitter-bash>=0.23",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.24",
+    "ruff>=0.16",
+    "black>=25.0",
+    "pyrefly>=1.0",
+    "mkdocs>=1.6",
+    "mkdocs-material>=9.5",
+    "mkdocstrings[python]>=0.26",
+    "pre-commit>=3.7",
+]
+examples = [
+    "langchain-openai>=0.2",
+    "python-dotenv>=1.0",
+    "deepagents>=0.7",
+    "langgraph-swarm>=0.1",
+    "sqlglot>=26.0",
+    "prometheus-client>=0.20",
+]
+
+[project.urls]
+Homepage = "https://github.com/smuniharish/contextiq"
+Documentation = "https://contextiq.readthedocs.io"
+Repository = "https://github.com/smuniharish/contextiq"
+Issues = "https://github.com/smuniharish/contextiq/issues"
+Changelog = "https://github.com/smuniharish/contextiq/blob/main/CHANGELOG.md"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/contextiq"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests", "examples"]
+
+[tool.ruff.lint]
+select = [
+    "E", "F", "I", "UP", "B", "C4", "SIM", "PL", "RUF", "N", "ANN",
+]
+ignore = [
+    "ANN401", # Any is sometimes legitimately required for heterogeneous content
+    "PLR0913", # many constructor params are intentional for explicit configuration
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["ANN", "PLR2004", "S101", "PLC0415", "RUF012", "RUF059"]
+"examples/*" = ["ANN", "T201", "PLR0915", "PLR2004"]
+
+[tool.black]
+line-length = 100
+target-version = ["py312"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+markers = [
+    "integration: tests exercising real LangGraph/LangChain integration paths",
+    "slow: slower or higher-fidelity tests",
+]

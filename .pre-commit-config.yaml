@@ -1,0 +1,28 @@
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.16.0
+    hooks:
+      - id: ruff
+        name: ruff check
+        args: [--fix]
+        files: ^(src|tests|examples)/
+      - id: ruff-format
+        name: ruff format
+        files: ^(src|tests|examples)/
+
+  - repo: local
+    hooks:
+      - id: pyrefly
+        name: pyrefly check
+        entry: pyrefly check
+        language: system
+        pass_filenames: false
+        types: [python]
+
+      - id: pytest
+        name: pytest
+        entry: pytest tests -q
+        language: system
+        pass_filenames: false
+        types: [python]
+        stages: [pre-push]
