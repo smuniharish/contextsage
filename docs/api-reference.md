@@ -8,7 +8,20 @@ The entire public surface of ContextSage is:
 from contextsage import IntelligentSummarizationMiddleware
 ```
 
-::: contextsage.IntelligentSummarizationMiddleware
+Use it with a LangGraph agent:
+
+```python
+from langchain.agents import create_agent
+from contextsage import IntelligentSummarizationMiddleware
+
+middleware = IntelligentSummarizationMiddleware(
+    model=model,
+    trigger=("tokens", 100_000),
+    keep=("messages", 20),
+)
+
+agent = create_agent(model=model, tools=tools, middleware=[middleware])
+```
 
 See [Configuration](configuration.md) for every constructor parameter.
 

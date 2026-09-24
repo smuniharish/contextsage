@@ -33,13 +33,6 @@ nav:
 
 plugins:
   - search
-  - mkdocstrings:
-      handlers:
-        python:
-          paths: [src]
-          options:
-            docstring_style: google
-            show_source: false
 
 markdown_extensions:
   - admonition

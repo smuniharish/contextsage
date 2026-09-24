@@ -56,7 +56,6 @@ dev = [
     "pyrefly>=1.0",
     "mkdocs>=1.6",
     "mkdocs-material>=9.5",
-    "mkdocstrings[python]>=0.26",
     "pre-commit>=3.7",
 ]
 examples = [
