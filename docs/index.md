@@ -25,3 +25,5 @@ Use the navigation to explore:
 - [Provenance](provenance.md) — how `langgraph-xai` is used.
 - [Observability](observability.md) — structured events emitted per operation.
 - [Migration](migration.md) — differences from LangGraph's `SummarizationMiddleware`.
+- [Agent Skills](agent-skills.md) — install the canonical ContextSage skill in
+  Claude Code, Codex, Cursor, GitHub Copilot, and other compatible agents.

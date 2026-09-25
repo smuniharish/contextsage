@@ -30,6 +30,7 @@ nav:
   - Provenance: provenance.md
   - Observability: observability.md
   - Migration Guide: migration.md
+  - Agent Skills: agent-skills.md
 
 plugins:
   - search

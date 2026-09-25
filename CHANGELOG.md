@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Agent Skills documentation covering the canonical ContextSage skill and
+  installation in Claude Code, Codex, Cursor, GitHub Copilot, skills.sh, and
+  other Agent Skills-compatible hosts.
+
 ## [0.1.0] - 2026-09-23
 
 ### Added
