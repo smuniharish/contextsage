@@ -1,146 +1,90 @@
-"""Real external telemetry integration: ContextSage -> Prometheus -> Grafana.
+"""Export ContextSage events as Prometheus metrics.
 
-`docs/observability.md` documents `observability_hook=` as a plain callable
-that receives a `SummarizationEvent`. This example proves that claim against
-a real external system rather than a mock: it builds a custom hook that
-records every field of `SummarizationEvent` as Prometheus metrics, serves
-them on `/metrics`, and drives several real-LLM summarizations (of varying
-sizes/outcomes) so the metrics have real, varied values to scrape.
+Run: python examples/observability_prometheus.py
 
-Run with:
-
-    python examples/observability_prometheus.py
-
-Requires a real API key (see examples/_llm.py) and the `examples` extra:
-
-    pip install -e ".[examples]"
-
-Then, separately, point a real Prometheus + Grafana stack at this process
-(see `examples/observability_prometheus.yml` for a ready-to-use Prometheus
-scrape config, and the podman commands in that file's header comment) to
-see the metrics graphed. This script keeps its metrics endpoint alive for
-`OBSERVABILITY_DEMO_SECONDS` seconds (default 120) after the last
-summarization so a scrape has time to land.
+Requires prometheus-client (installed with the ``examples`` dependency group).
+The script serves metrics on http://localhost:9109/metrics, runs a few
+summarizations, then keeps serving for ``OBSERVABILITY_DEMO_SECONDS`` seconds
+(default 60) so a Prometheus server can scrape it. See
+``examples/observability_prometheus.yml`` for a scrape configuration.
 """
-
-from __future__ import annotations
 
 import os
 import time
 
-from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
+from langchain_core.messages import AIMessage, AnyMessage, HumanMessage, ToolMessage
+from langgraph.runtime import Runtime
 from prometheus_client import Counter, Histogram, start_http_server
 
-from _llm import build_demo_model
-from contextsage import IntelligentSummarizationMiddleware
-from contextsage.observability.events import SummarizationEvent
+from _models import scripted_model
+from contextsage import IntelligentSummarizationMiddleware, SummarizationEvent
 
-# One metric per SummarizationEvent field that varies meaningfully across
-# operations. Labels use only the low-cardinality status/reason strings
-# documented in docs/observability.md -- never raw content.
-SUMMARIZATIONS_TOTAL = Counter(
+SUMMARIZATIONS = Counter(
     "contextsage_summarizations_total",
-    "Number of IntelligentSummarizationMiddleware operations, by outcome.",
-    labelnames=("validation_status", "recovery_status", "fallback_used"),
+    "Summarizations by validation and recovery outcome.",
+    labelnames=("validation_status", "recovery_status"),
 )
 INPUT_TOKENS = Histogram(
     "contextsage_input_tokens",
-    "Observed input token count *before* summarization (at trigger time).",
-    buckets=(50, 100, 250, 500, 1000, 2500, 5000, 10_000),
+    "Tokens in the history before summarization.",
+    buckets=(250, 500, 1_000, 2_500, 5_000, 10_000, 25_000, 100_000),
 )
-SUMMARY_TOKENS = Histogram(
-    "contextsage_summary_tokens",
-    "Token count of the produced summary *after* summarization -- graph "
-    "alongside contextsage_input_tokens to see the actual before/after "
-    "reduction, not just the derived compression_ratio.",
-    buckets=(50, 100, 250, 500, 1000, 2500, 5000, 10_000),
+OUTPUT_TOKENS = Histogram(
+    "contextsage_output_tokens",
+    "Tokens in the history after summarization.",
+    buckets=(250, 500, 1_000, 2_500, 5_000, 10_000, 25_000, 100_000),
 )
-COMPRESSION_RATIO = Histogram(
+COMPRESSION = Histogram(
     "contextsage_compression_ratio",
-    "summary_tokens / input_tokens for each summarization operation.",
-    buckets=(0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.75, 1.0),
+    "Output tokens divided by input tokens.",
+    buckets=(0.05, 0.1, 0.2, 0.3, 0.5, 0.75, 1.0, 1.5),
 )
-LATENCY_MS = Histogram(
+LATENCY = Histogram(
     "contextsage_latency_ms",
-    "End-to-end before_model latency in milliseconds.",
-    buckets=(50, 100, 250, 500, 1000, 2500, 5000, 10_000, 30_000),
+    "Time spent in the middleware, in milliseconds.",
+    buckets=(10, 50, 100, 250, 500, 1_000, 2_500, 10_000, 30_000),
 )
 
 
-def prometheus_observability_hook(event: SummarizationEvent) -> None:
-    """A real `ObservabilityHook`: records one `SummarizationEvent` as metrics."""
-    SUMMARIZATIONS_TOTAL.labels(
-        validation_status=event.validation_status,
-        recovery_status=event.recovery_status,
-        fallback_used=str(event.fallback_used),
-    ).inc()
+def record(event: SummarizationEvent) -> None:
+    """Record one event; labels use only low-cardinality status values."""
+    SUMMARIZATIONS.labels(event.validation_status, event.recovery_status).inc()
     INPUT_TOKENS.observe(event.input_tokens)
-    SUMMARY_TOKENS.observe(event.summary_tokens)
-    COMPRESSION_RATIO.observe(event.compression_ratio)
-    LATENCY_MS.observe(event.latency_ms)
+    OUTPUT_TOKENS.observe(event.output_tokens)
+    COMPRESSION.observe(event.compression_ratio)
+    LATENCY.observe(event.latency_ms)
     print(
-        f"[observability] trigger={event.trigger_reason!r} "
-        f"input_tokens={event.input_tokens} summary_tokens={event.summary_tokens} "
-        f"compression_ratio={event.compression_ratio:.3f} "
-        f"validation={event.validation_status} recovery={event.recovery_status} "
-        f"latency_ms={event.latency_ms:.1f}"
+        f"{event.input_tokens} -> {event.output_tokens} tokens, "
+        f"validation={event.validation_status}, recovery={event.recovery_status}"
     )
 
 
-def _conversation(size: str) -> list:
-    """Build a conversation that reliably triggers summarization at size `size`."""
-    base = [
-        HumanMessage(content="Please process the order for customer 123.", id="h1"),
-        AIMessage(
-            content="",
-            id="a1",
-            tool_calls=[{"id": "call-1", "name": "lookup_order", "args": {"customer": 123}}],
-        ),
+def history(size: int) -> list[AnyMessage]:
+    """A conversation whose tool result holds ``size`` routine log lines."""
+    log = "".join(
+        f"2026-10-04T10:{index // 60:02d}:{index % 60:02d}Z INFO sync batch done\n"
+        for index in range(size)
+    )
+    return [
+        HumanMessage("Why did the nightly sync for tenant T-310 fail?"),
+        AIMessage("", tool_calls=[{"id": "c1", "name": "sync_logs", "args": {}}]),
         ToolMessage(
-            content=(
-                "status=processing transaction_id=TX-991\n"
-                + ("INFO heartbeat ok\n" * (40 if size == "large" else 5))
-                + "ERROR root cause: connection pool exhaustion\n"
-            ),
-            tool_call_id="call-1",
-            id="t1",
+            log + "2026-10-04T11:00:00Z ERROR sync aborted for T-310\n",
+            tool_call_id="c1",
         ),
-        HumanMessage(content="Any update on TX-991?", id="h2"),
+        AIMessage("The sync for T-310 aborted."),
+        HumanMessage("What should we do?"),
     ]
-    if size == "large":
-        base.append(
-            HumanMessage(
-                content="Also double check the customer's shipping address is still 456 Oak St.",
-                id="h3",
-            )
-        )
-    return base
 
 
-def main() -> None:
-    model = build_demo_model()
-
-    print("Starting Prometheus metrics endpoint on http://localhost:9109/metrics ...")
-    start_http_server(9109)
-
-    for size, trigger_tokens in (("small", 400), ("large", 60)):
-        middleware = IntelligentSummarizationMiddleware(
-            model=model,
-            trigger=("tokens", trigger_tokens),
-            keep=("messages", 1),
-            observability_hook=prometheus_observability_hook,
-        )
-        result = middleware.before_model({"messages": _conversation(size)}, None)
-        if result is None:
-            print(f"[{size}] no summarization triggered at threshold={trigger_tokens}")
-
-    demo_seconds = int(os.environ.get("OBSERVABILITY_DEMO_SECONDS", "120"))
-    print(
-        f"\nMetrics are live at http://localhost:9109/metrics for {demo_seconds}s "
-        "-- point Prometheus at this process now (see examples/observability_prometheus.yml)."
+start_http_server(9109)
+print("Serving metrics on http://localhost:9109/metrics")
+for size in (50, 400, 1_500):
+    middleware = IntelligentSummarizationMiddleware(
+        model=scripted_model("The nightly sync for tenant T-310 aborted."),
+        trigger=("tokens", 500),
+        keep=("messages", 2),
+        observability_hook=record,
     )
-    time.sleep(demo_seconds)
-
-
-if __name__ == "__main__":
-    main()
+    middleware.before_model({"messages": history(size)}, Runtime())
+time.sleep(int(os.environ.get("OBSERVABILITY_DEMO_SECONDS", "60")))

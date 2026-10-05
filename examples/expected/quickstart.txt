@@ -1,0 +1,12 @@
+History after the agent turn:
+  human Here is a summary of the conversation to date:
+  ai    INC-9931 is caused by connection pool exhaustion.
+  human Is any other service affected?
+  ai    INC-9931 only affects the payments service.
+
+tokens before:      3283
+after compaction:   166
+after summary:      70
+compression ratio:  0.021
+validation:         passed
+must-keep facts:    2

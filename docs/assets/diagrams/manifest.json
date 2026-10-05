@@ -1,0 +1,12 @@
+{
+  "renderer": "@mermaid-js/mermaid-cli@12.0.0",
+  "config": "caeeacf3954f6aa562dfaf193491ab38e0432287aa36954e034f34fa5701a036",
+  "sources": {
+    "architecture.mmd": "4b8553d7ab69fe9ed69360c25c760066c04065783952ef3b7ee96fd419bbf897",
+    "decomposition.mmd": "dce30ef70901cb7f9dc425e48d52d220389d9a4779e74bea59c780319e4c03b9",
+    "pipeline.mmd": "4a639ae5e8eab2fb059be82421c9d84950da576b295acc838bc455c10c3301fd",
+    "preservation.mmd": "477c8cfe6cf2360cb199c6ae161449d30db10cb7f47d6c6c739a1c3c42567e85",
+    "provenance.mmd": "113d8ab17dcb137da806191fdb26ad305aea999bdabbd79a535e68dcdb08c6d0",
+    "validation-recovery.mmd": "9c65852dfffffa3883218f3b190606ba8b9302b3769da274c65fb66de8c8824a"
+  }
+}

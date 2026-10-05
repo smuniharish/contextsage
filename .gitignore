@@ -1,20 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+# Environments and secrets
 .venv/
 venv/
-__pycache__/
-*.pyc
-*.egg-info/
-dist/
-build/
+.env
+
+# Tool caches
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
 .pyrefly_cache/
+.hypothesis/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+
+# Documentation build
 site/
+
+# Node tooling used by scripts/render_diagrams.mjs
 node_modules/
 package.json
 package-lock.json
-.env
-uv.lock.bak
+
 *.log
-.coverage
-htmlcov/

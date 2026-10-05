@@ -1,0 +1,12 @@
+Here is a summary of the conversation to date:
+
+The user asked about refunds and an order.
+
+Facts preserved verbatim from the earlier conversation:
+- User instruction: "You must never refund more than 500 dollars without approval."
+- ORD-1001
+- TX-7781
+- User correction: "No, use customer 456 instead of customer 123."
+- Conflicting values reported for status: SHIPPED (earlier) vs LOST (later)
+
+validation: failed_recovered, recovery: restated_facts

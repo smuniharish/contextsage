@@ -1,0 +1,24 @@
+log record 'contextsage summarization':
+{
+  "generation": 1,
+  "thread_id": null,
+  "trigger_reason": "6 messages >= 6",
+  "input_messages": 6,
+  "input_tokens": 1627,
+  "available_tokens": 109200,
+  "overflow_tokens": 0,
+  "prepared_tokens": 135,
+  "output_messages": 3,
+  "output_tokens": 61,
+  "compression_ratio": 0.037492317148125384,
+  "compacted_units": 1,
+  "must_preserve_units": 2,
+  "must_preserve_facts": 2,
+  "content_kinds": {
+    "log": 2,
+    "text": 4
+  },
+  "validation_status": "failed_recovered",
+  "recovery_status": "restated_facts"
+}
+hook: recovery 'restated_facts' after 6 messages >= 6

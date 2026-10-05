@@ -1,49 +1,133 @@
 site_name: ContextSage
-site_description: Intelligent, production-grade context summarization for LangGraph/LangChain agents.
-repo_url: https://github.com/smuniharish/contextsage
+site_description: >-
+  Information-aware context summarization middleware for LangChain and
+  LangGraph agents: compacts structured content, verifies that critical facts
+  survive, and traces every summary to its sources.
+site_url: https://contextsage.readthedocs.io/en/latest/
+site_author: S MUNI HARISH
 repo_name: smuniharish/contextsage
-edit_uri: edit/main/docs/
+repo_url: https://github.com/smuniharish/contextsage
+edit_uri: edit/master/docs/
+copyright: Copyright &copy; 2026 S MUNI HARISH &middot; Apache License 2.0
+
+watch:
+  - src
+  - examples
 
 theme:
   name: material
+  icon:
+    repo: fontawesome/brands/github
   palette:
-    - scheme: default
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
       primary: indigo
+      accent: teal
       toggle:
-        icon: material/brightness-7
+        icon: material/weather-night
         name: Switch to dark mode
-    - scheme: slate
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
       primary: indigo
+      accent: teal
       toggle:
-        icon: material/brightness-4
+        icon: material/weather-sunny
         name: Switch to light mode
   features:
+    - content.code.copy
+    - content.tabs.link
+    - navigation.footer
+    - navigation.indexes
     - navigation.sections
     - navigation.top
-    - content.code.copy
+    - navigation.tracking
+    - search.highlight
+    - search.suggest
+    - toc.follow
 
-nav:
-  - Home: index.md
-  - Architecture: architecture.md
-  - Configuration: configuration.md
-  - API Reference: api-reference.md
-  - Provenance: provenance.md
-  - Observability: observability.md
-  - Migration Guide: migration.md
-  - Agent Skills: agent-skills.md
+extra_css:
+  - assets/stylesheets/extra.css
 
 plugins:
   - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
+          options:
+            docstring_style: google
+            show_source: false
+            show_root_heading: false
+            show_root_toc_entry: false
+            show_root_full_path: false
+            merge_init_into_class: true
+            separate_signature: true
+            show_signature_annotations: true
+            signature_crossrefs: true
+            members_order: source
+            heading_level: 2
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
 
 markdown_extensions:
+  - abbr
   - admonition
-  - pymdownx.details
-  - pymdownx.superfences:
-      custom_fences:
-        - name: mermaid
-          class: mermaid
-          format: !!python/name:pymdownx.superfences.fence_code_format
-  - pymdownx.highlight
+  - attr_list
+  - md_in_html
   - tables
   - toc:
       permalink: true
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets:
+      base_path: ["."]
+      check_paths: true
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+
+validation:
+  nav:
+    omitted_files: warn
+    not_found: warn
+    absolute_links: warn
+  links:
+    not_found: warn
+    anchors: warn
+    absolute_links: warn
+    unrecognized_links: warn
+
+nav:
+  - Home: index.md
+  - Getting started:
+      - Installation: getting-started/installation.md
+      - Quickstart: getting-started/quickstart.md
+      - Agent Skills: agent-skills.md
+  - User guide:
+      - How it works: guide/how-it-works.md
+      - Configuration: guide/configuration.md
+      - Preservation policies: guide/policies.md
+      - Content parsing: guide/content-parsing.md
+      - Validation and recovery: guide/validation-recovery.md
+      - Observability: guide/observability.md
+      - Provenance and lineage: guide/provenance.md
+      - Agent integrations: guide/integrations.md
+      - Migrating from SummarizationMiddleware: guide/migration.md
+  - Architecture: architecture.md
+  - Examples: examples.md
+  - API reference: reference/index.md
+  - Operations:
+      - Production checklist: operations/production.md
+      - Performance: operations/performance.md
+      - Security and privacy: operations/security.md
+  - Development:
+      - Contributing: development/contributing.md
+      - Testing: development/testing.md
+  - Changelog: changelog.md

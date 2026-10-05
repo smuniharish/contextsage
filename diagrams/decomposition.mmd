@@ -1,0 +1,13 @@
+flowchart TB
+    subgraph parser["parsefabric MixedContentParser"]
+        message["Each line of the message"] --> fence{"Fenced<br/>block?"}
+        fence -- yes --> fenced["fence_routes parser,<br/>else code"]
+        fence -- no --> routes["Your routes,<br/>then the JSON route"]
+        routes -- unmatched --> patterns["Line patterns:<br/>stack traces, logs, tables"]
+        patterns -- unmatched --> code["Code detection with<br/>tree-sitter grammars"]
+    end
+    fenced --> lines["Kind and severity of every line"]
+    routes --> lines
+    patterns --> lines
+    code --> lines
+    lines --> units["Content units: text, json, log,<br/>table, code, error or your own kind"]

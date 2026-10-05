@@ -1,43 +1,40 @@
-# Security Policy
+# Security policy
 
-## Supported Versions
+## Supported versions
 
-ContextSage is currently pre-1.0 (`0.x`). Security fixes are made against
-the latest released `0.x` version only; there is no long-term support
-branch yet.
+Security fixes are released for the latest minor version.
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 0.1.x   | :white_check_mark: |
+| Version | Supported |
+| --- | --- |
+| 1.0.x | Yes |
+| 0.1.x | No |
 
-## Reporting a Vulnerability
+## Reporting a vulnerability
 
-Please **do not** open a public GitHub issue for security vulnerabilities.
+Please do not report security vulnerabilities in public issues.
 
-Instead, report privately via GitHub's
-[private vulnerability reporting](https://github.com/smuniharish/contextsage/security/advisories/new)
-feature, or email the maintainer listed in `pyproject.toml`
-(`authors`).
+Report them privately through
+[GitHub private vulnerability reporting](https://github.com/smuniharish/contextsage/security/advisories/new),
+or by email to samamuniharish@gmail.com. Include:
 
-Please include:
+- the affected ContextSage, LangChain and Python versions,
+- a description of the vulnerability and its impact, and
+- a minimal script or history that reproduces it, without real credentials or
+  private conversation content.
 
-- A description of the vulnerability and its potential impact.
-- Steps to reproduce, including the `IntelligentSummarizationMiddleware`
-  configuration and message shapes involved, if applicable.
-- Any suggested remediation, if you have one.
+The maintainer aims to acknowledge reports within five business days. Once
+the issue is confirmed, a fix is prepared and released, and the vulnerability
+is disclosed in a GitHub security advisory and the changelog, with credit to
+the reporter unless you prefer otherwise.
 
-You should expect an initial response within 5 business days. Once a fix
-is available, it will be released as a new `0.x` patch version and noted
-in `CHANGELOG.md`.
+## Scope
 
-## Scope notes
-
-ContextSage processes agent conversation content (including tool output) in
-order to decompose, classify, and summarize it. It does not execute code,
-evaluate SQL, or otherwise act on the content it inspects — parsers such
-as `CodeParser` (via `tree-sitter`) and the `sqlglot`-based example SQL
-parser only *parse* text to measure structural confidence; they never
-execute or transpile it against a live database or interpreter. Reports
-related to a bundled third-party dependency (e.g. `tree-sitter`,
-`tiktoken`, `langgraph-xai`) should generally be reported upstream to that
-project as well.
+ContextSage treats conversation content, including tool output, as untrusted,
+and its configuration, including custom parsers, routes and identifier
+patterns, as trusted. The
+[security guide](https://contextsage.readthedocs.io/en/latest/operations/security/)
+describes this model: what leaves the process, what is logged and stored, and
+how untrusted content is handled. Reports that require trusted code or
+configuration to be malicious are out of scope. Vulnerabilities in a
+dependency, such as LangChain, parsefabric or langgraph-xai, should also be
+reported to that project.

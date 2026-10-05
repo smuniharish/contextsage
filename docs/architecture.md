@@ -1,109 +1,70 @@
 # Architecture
 
-## Design principle
+ContextSage is a thin, deterministic layer around LangChain's summarization.
+It decides what the summary must not lose and checks that it did not, and
+leaves the writing of summaries to LangChain.
 
-> Information preservation > raw token reduction.
+<figure class="diagram" markdown="span">
+  ![An agent calls ContextSage before each model call. The middleware checks the trigger and budget, analyzes and compacts the history, has LangChain summarize older messages, and validates the result. It returns the rewritten history and records provenance links and an event.](assets/diagrams/architecture.png){ width="720" }
+  <figcaption>The middleware's stages, the services it uses, and what it
+  produces.</figcaption>
+</figure>
 
-A smaller summary that loses a customer ID, a user correction, or a root
-cause is a failure, even if it saves tokens. ContextSage's planner is
-budget-aware *and* information-aware.
+## Design principles
 
-## Ownership boundary
+- **Build on the ecosystem.** LangChain writes the summaries, counts tokens and
+  trims histories; parsefabric parses content; langgraph-xai stores
+  provenance. ContextSage adds what they do not provide: content-aware
+  analysis, compaction, validation and recovery.
+- **Deterministic before generative.** Everything except the summary itself is
+  deterministic: the same history and configuration always produce the same
+  analysis, compaction and validation result.
+- **Never fail the agent.** After construction, ContextSage recovers from model
+  failures and logs everything else, so summarization cannot break an agent
+  turn. Configuration errors surface early, when the middleware is created.
+- **Content-free telemetry.** Events and log records describe what happened in
+  counts and statuses, never with message content.
+- **Bounded work.** Patterns run in linear time on untrusted text, and conflict
+  detection stays linear in the size of the history.
 
-ContextSage never reimplements semantic LLM summarization. It wraps
-LangChain's `SummarizationMiddleware` (`contextsage.integrations.langgraph.adapter.LangGraphSummarizationAdapter`)
-and configures it with an always-eligible internal trigger. ContextSage owns
-*whether* summarization runs and *what* is prepared for it; LangGraph owns
-*how many* messages to keep and the actual LLM-generated summary text.
+## Components
 
-## Pipeline
+| Component | Responsibility |
+| --- | --- |
+| Trigger and budget | Counts tokens with LangChain's counter and decides whether to run, from the trigger or the input budget |
+| Parser | parsefabric's `MixedContentParser`, configured with ContextSage's log, stack-trace, table and JSON recognition and your routes |
+| Analysis | Splits messages into content units, scores their importance, finds conflicting values, assigns preservation levels and derives facts |
+| Compaction | Rewrites JSON, tables and logs deterministically within what each unit's level allows, and rebuilds each message |
+| Summarizer | LangChain's `SummarizationMiddleware`, which writes the summary of the messages older than `keep` |
+| Validation and recovery | Checks facts and tool-call pairing, restates missing facts, and trims the history when the summary model fails |
+| Provenance | Writes a `derived_from` link per replaced message to a langgraph-xai store, and answers lineage queries |
+| Events | Builds the `SummarizationEvent`, logs it and passes it to the hook |
 
-```
-Complete context
-      |
-      v
-Heterogeneous context decomposition (ContextDecomposer)
-      |
-      v
-Structural signals (StructuralSignalDetector)
-      |
-      v
-Importance (ImportanceEngine) -> Relationships/Provenance (RelationshipEngine)
-      |
-      v
-Preservation requirements (PreservationEngine)
-      |
-      v
-Summarization plan (SummarizationPlanner)
-      |
-      v
-Selective deterministic transformation (ContextTransformationEngine)
-      |
-      v
-LangGraph semantic summarization (LangGraphSummarizationAdapter)
-      |
-      v
-Validation (SummaryValidator) -> Recovery (RecoveryManager) if needed
-      |
-      v
-Reconstruction (apply_transformed_units) -> Lineage/Observability/Provenance
-```
+[How it works](guide/how-it-works.md) follows a history through these
+components step by step.
 
-See the diagrams under [docs/diagrams](https://github.com/smuniharish/contextsage/tree/main/docs/diagrams)
-in the repository for rendered visuals of this pipeline and the individual
-engines.
+## Guarantees
 
-## Why context is never treated as one content type
+The test suite checks each of these, many with property-based tests over
+generated histories:
 
-A single `ToolMessage` (especially from an MCP server) commonly mixes
-natural language, JSON, logs, errors, and metadata. `ContextDecomposer`
-never classifies a whole message as one type: it extracts fenced code
-blocks, then embedded JSON values (via `json.JSONDecoder.raw_decode`, which
-locates a JSON value at a given start index without needing to guess the
-end), then groups the remaining text into contiguous log-like vs.
-plain-text runs. Each resulting region is independently classified by
-`StructuralSignalDetector`, which is deliberately conservative: low
-confidence means "treat as plain text" rather than risk misclassification.
+- Content units tile each message exactly, so content that is not compacted
+  stays byte for byte as it was.
+- Compaction never makes content longer, and never touches system messages or
+  messages with structured content.
+- Compaction never removes a fact: facts come from must-preserve content, which
+  receives only lossless compaction.
+- After a summary, every fact is present, either kept by the summary model or
+  restated, and facts stay required in every later summary.
+- Text the summary model wrote never becomes a user instruction or
+  correction.
+- The fallback never starts the history on a tool result, and never separates
+  the latest tool call from its result.
+- Lossy JSON compaction never invents values.
 
-Segmentation never hardcodes its own copy of "what a code fence/JSON
-opener/log severity word looks like": it derives those shapes, at
-construction time, from the actual `CodeParser`/`JSONParser`/`LogParser`
-instances found in the detector's registry (default or overridden via
-`IntelligentSummarizationMiddleware(parsers=[...])`), so there is a single
-source of truth per shape instead of drifting, independently-configured
-copies.
+## Public API and versioning
 
-## Why deterministic transformation is an optimization, not the primary mechanism
-
-`ContextTransformationEngine` only ever transforms units the planner
-explicitly targeted as `transform_deterministic` (structured/log/table
-content the preservation engine judged compressible or redundant). If a
-transformer raises `TransformationError`, or the "compressed" result is not
-actually smaller, the unit is left completely untouched. Ordinary natural
-language is always routed to `semantic_summarize`, i.e. left for LangGraph's
-own LLM-based summarization.
-
-## Why validation and recovery exist
-
-The planner's `preserve_untouched` classification does not force LangGraph
-to literally retain a message's raw text — LangGraph's own `keep` parameter
-still controls the raw/summarized cutoff. The intelligence guarantee comes
-from the loop:
-
-1. `SummaryValidator` checks the LLM-produced summary for every literal
-   must-preserve fact, tool-call pairing, and unresolved contradiction.
-2. If validation fails, `RecoveryManager` appends a "preserved facts"
-   message restating exactly what was lost — it never re-invokes the LLM
-   (which already retried transient errors internally), and never silently
-   accepts an invalid summary.
-3. If the LLM call itself fails (timeout, rate limit, malformed response),
-   `RecoveryManager` falls back to a deterministic trim of the most recent
-   `keep` messages, with a preserved-facts message prepended.
-
-## What ContextSage is not
-
-ContextSage is not an agent framework, memory framework, or a replacement for
-LangGraph/LangChain, a general-purpose parser/document-processing
-framework, or a new plugin platform — there is no public plugin registry.
-See the project [README](https://github.com/smuniharish/contextsage#what-contextsage-is-not)
-for the full list.
+The public API is everything listed in the [API reference](reference/index.md)
+and exported by the `contextsage` package. Modules and names that start with
+an underscore are internal and can change in any release. ContextSage follows
+[Semantic Versioning](https://semver.org/).

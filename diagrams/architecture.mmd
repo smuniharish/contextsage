@@ -1,0 +1,13 @@
+flowchart TB
+    agent["LangChain agent<br/>create_agent, a deep agent,<br/>a swarm or a LangGraph graph"] -- "before each model call" --> middleware
+    subgraph middleware["IntelligentSummarizationMiddleware"]
+        direction LR
+        trigger["Trigger and<br/>token budget"] --> analyze["Analyze the history:<br/>parsefabric parsing,<br/>importance and facts"]
+        analyze --> compact["Compact<br/>structured content"]
+        compact --> summarize["Summarize older<br/>messages with LangChain's<br/>SummarizationMiddleware"]
+        summarize --> validate["Validate facts<br/>and tool calls"]
+    end
+    middleware -. "summary call" .-> model[("Summary<br/>chat model")]
+    middleware --> history["Rewritten history<br/>for the next model call"]
+    middleware -. "derived_from links" .-> store[("langgraph-xai<br/>provenance store")]
+    middleware -. "SummarizationEvent" .-> observe["Logging and your<br/>observability hook"]

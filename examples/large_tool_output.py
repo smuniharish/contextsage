@@ -1,71 +1,65 @@
-"""Large tool output example: a single huge MCP-style result mixing
-explanatory text, JSON, and 100+ repeated log lines.
+"""Compact a large, mixed tool result without losing what matters.
 
-Demonstrates that ContextSage deterministically compresses the log-heavy
-portion while protecting the transaction id and root cause, instead of
-forcing the whole 100K-token result into one semantic LLM summarization
-call. Uses a real chat model (see examples/_llm.py); requires EXPLABS_API_KEY.
+Run: python examples/large_tool_output.py
+
+A single MCP-style tool result mixes prose, a JSON payload with repeated
+records, a long routine log, warnings and an error. The history is too short
+to summarize, so ContextSage only compacts: repeated log lines collapse into
+one marker with the omitted line range, identical JSON records collapse into a
+counted entry, and every distinct line, warning, error and identifier stays.
 """
-
-from __future__ import annotations
 
 import json
 
-from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
+from langchain_core.messages import AIMessage, AnyMessage, HumanMessage, ToolMessage
+from langgraph.runtime import Runtime
 
-from _llm import build_demo_model
-from contextsage import IntelligentSummarizationMiddleware
+from _models import scripted_model
+from contextsage import IntelligentSummarizationMiddleware, SummarizationEvent
 
+events: list[SummarizationEvent] = []
+middleware = IntelligentSummarizationMiddleware(
+    model=scripted_model("unused"),
+    trigger=("tokens", 1_000),
+    keep=("messages", 20),
+    observability_hook=events.append,
+)
 
-def build_large_tool_result() -> str:
-    explanatory_text = (
-        "The nightly batch job for the billing pipeline failed partway through "
-        "processing. Below is the raw execution log and the final status payload."
-    )
-    log_lines = "\n".join(
-        f"2024-03-01T02:00:{i:02d} INFO worker-{i % 4} processed batch item {i}" for i in range(200)
-    )
-    status_payload = json.dumps(
-        {
-            "status": "failed",
-            "transaction_id": "TX-77123",
-            "batch_id": "BATCH-2024-03-01",
-            "errors": ["connection pool exhausted", "retry limit exceeded"],
-        }
-    )
-    final_error_line = "2024-03-01T02:03:41 ERROR root cause: PostgreSQL connection pool exhaustion"
-    return f"{explanatory_text}\n{status_payload}\n{log_lines}\n{final_error_line}"
+heartbeats = "".join(
+    f"2026-10-04T08:{index // 60:02d}:{index % 60:02d}Z "
+    f"INFO checkout-worker-{index % 4} heartbeat ok\n"
+    for index in range(150)
+)
+result = {
+    "service": "checkout",
+    "region": "eu-west-1",
+    "orders": [{"sku": "A-1", "qty": 1, "state": "queued"}] * 25
+    + [{"sku": "B-7", "qty": 2, "state": "failed", "order_id": "ORD-5521"}],
+}
+tool_output = (
+    "Diagnostics for incident INC-4410 (checkout latency).\n"
+    + json.dumps(result)
+    + "\n"
+    + heartbeats
+    + "2026-10-04T08:02:31Z WARN slow query on orders took 2300 ms\n"
+    + "2026-10-04T08:02:32Z ERROR payment authorization failed for order ORD-5521\n"
+)
+history: list[AnyMessage] = [
+    HumanMessage("Why is checkout slow?"),
+    AIMessage("", tool_calls=[{"id": "call-1", "name": "diagnostics", "args": {}}]),
+    ToolMessage(tool_output, tool_call_id="call-1"),
+]
 
+update = middleware.before_model({"messages": history}, Runtime())
+if update is None:
+    raise SystemExit("The tool result was not compacted.")
+compacted = update["messages"][-1].text
+before, after = len(tool_output.splitlines()), len(compacted.splitlines())
 
-def main() -> None:
-    middleware = IntelligentSummarizationMiddleware(
-        model=build_demo_model(),
-        trigger=("tokens", 500),
-        keep=("messages", 2),
-    )
-
-    conversation = [
-        HumanMessage(content="Please check on last night's billing batch job."),
-        AIMessage(
-            content="",
-            tool_calls=[{"id": "call-1", "name": "get_batch_status", "args": {}}],
-        ),
-        ToolMessage(content=build_large_tool_result(), tool_call_id="call-1"),
-        AIMessage(content="Let me look into the failure details for you."),
-    ]
-
-    result = middleware.before_model({"messages": conversation}, None)
-    if result is None:
-        print("No summarization was required.")
-        return
-
-    combined_text = "\n".join(str(getattr(m, "content", "")) for m in result["messages"])
-    print("Summarization triggered.")
-    print("TX-77123 preserved:", "TX-77123" in combined_text)
-    print("Root cause preserved:", "PostgreSQL connection pool exhaustion" in combined_text)
-    for message in result["messages"]:
-        print(f"  [{type(message).__name__}] {str(getattr(message, 'content', ''))[:150]}")
-
-
-if __name__ == "__main__":
-    main()
+print(f"{before} lines before, {after} after")
+print()
+print(compacted)
+event = events[0]
+print(f"tokens: {event.input_tokens} -> {event.output_tokens}")
+print(f"compacted units: {event.compacted_units}")
+print(f"content kinds: {event.content_kinds}")

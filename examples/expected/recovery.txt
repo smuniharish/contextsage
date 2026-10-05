@@ -1,0 +1,14 @@
+History after the fallback:
+  human Earlier messages were removed because the summary model was unavailable.
+        
+        The latest user request was:
+        Retry the payment.
+        
+        Facts preserved verbatim from the earlier conversation:
+        - ORD-2207
+        - customer 812
+        - GW-5003
+  ai    calls retry_payment
+  tool  retry accepted
+
+validation: skipped, recovery: trimmed_fallback

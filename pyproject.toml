@@ -1,70 +1,46 @@
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling>=1.32.4"]
 build-backend = "hatchling.build"
 
 [project]
 name = "contextsage"
-version = "0.1.0"
-description = "Intelligent, production-grade context summarization for LangGraph/LangChain agents."
+dynamic = ["version"]
+description = "Information-aware context summarization middleware for LangChain and LangGraph agents."
 readme = "README.md"
-license = "Apache-2.0"
-authors = [{ name = "S MUNI HARISH", email = "samamuniharish@gmail.com" }]
 requires-python = ">=3.12"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+authors = [{ name = "S MUNI HARISH", email = "samamuniharish@gmail.com" }]
 keywords = [
-    "langgraph",
-    "langchain",
-    "llm",
-    "agents",
-    "summarization",
-    "context-engineering",
+  "langgraph",
+  "langchain",
+  "llm",
+  "agents",
+  "middleware",
+  "summarization",
+  "context-engineering",
+  "provenance",
 ]
 classifiers = [
-    "Development Status :: 4 - Beta",
-    "Intended Audience :: Developers",
-    "License :: OSI Approved :: Apache Software License",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.13",
-    "Topic :: Software Development :: Libraries :: Python Modules",
-    "Typing :: Typed",
+  "Development Status :: 5 - Production/Stable",
+  "Framework :: AsyncIO",
+  "Intended Audience :: Developers",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "Typing :: Typed",
 ]
 dependencies = [
-    "langgraph>=1.0.0",
-    "langchain>=1.0.0",
-    "langgraph-xai>=0.1.0",
-    "pydantic>=2.7",
-    "tiktoken>=0.7",
-    "tree-sitter>=0.23",
-    "tree-sitter-python>=0.23",
-    "tree-sitter-javascript>=0.23",
-    "tree-sitter-typescript>=0.23",
-    "tree-sitter-go>=0.23",
-    "tree-sitter-java>=0.23",
-    "tree-sitter-rust>=0.23",
-    "tree-sitter-c>=0.23",
-    "tree-sitter-cpp>=0.23",
-    "tree-sitter-ruby>=0.23",
-    "tree-sitter-bash>=0.23",
-]
-
-[project.optional-dependencies]
-dev = [
-    "pytest>=8.0",
-    "pytest-asyncio>=0.24",
-    "ruff>=0.16",
-    "black>=25.0",
-    "pyrefly>=1.0",
-    "mkdocs>=1.6",
-    "mkdocs-material>=9.5",
-    "pre-commit>=3.7",
-]
-examples = [
-    "langchain-openai>=0.2",
-    "python-dotenv>=1.0",
-    "deepagents>=0.7",
-    "langgraph-swarm>=0.1",
-    "sqlglot>=26.0",
-    "prometheus-client>=0.20",
+  "langchain>=1.4.3,<2",
+  "langchain-core>=1.6.6,<2",
+  "langgraph>=1.2.12,<2",
+  "langgraph-xai>=1.0.0,<2",
+  "parsefabric>=0.1.0,<1",
 ]
 
 [project.urls]
@@ -72,37 +48,141 @@ Homepage = "https://github.com/smuniharish/contextsage"
 Documentation = "https://contextsage.readthedocs.io"
 Repository = "https://github.com/smuniharish/contextsage"
 Issues = "https://github.com/smuniharish/contextsage/issues"
-Changelog = "https://github.com/smuniharish/contextsage/blob/main/CHANGELOG.md"
+Changelog = "https://contextsage.readthedocs.io/en/latest/changelog/"
+
+[dependency-groups]
+test = [
+  "coverage[toml]>=7.16.2",
+  "hypothesis>=6.168.4,<7",
+  "pytest>=9.1.1",
+  "pytest-asyncio>=1.4",
+]
+lint = ["ruff>=0.16.10"]
+types = ["pyrefly>=1.3.2"]
+docs = [
+  "mkdocs>=1.6.1,<2",
+  "mkdocs-material>=9.7.7,<10",
+  "mkdocstrings>=1.0.6,<2",
+  "mkdocstrings-python>=2.0.9,<3",
+]
+examples = [
+  "deepagents>=0.7.21",
+  "langchain-openai>=1.6.7,<2",
+  "langgraph-swarm>=0.1.0",
+  "prometheus-client>=0.26.0",
+  "python-dotenv>=1.2.4",
+  "sqlglot>=30.21,<31",
+]
+dev = [
+  { include-group = "test" },
+  { include-group = "lint" },
+  { include-group = "types" },
+  { include-group = "docs" },
+  { include-group = "examples" },
+]
+
+[tool.uv]
+default-groups = ["dev"]
+
+[tool.hatch.version]
+path = "src/contextsage/__init__.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/contextsage"]
 
+[tool.hatch.build.targets.sdist]
+include = [
+  "/src",
+  "/tests",
+  "/examples",
+  "/benchmarks",
+  "/docs",
+  "/diagrams",
+  "/scripts",
+  "/contextsage-skills",
+  "/mkdocs.yml",
+  "/.env.example",
+  "/README.md",
+  "/CHANGELOG.md",
+  "/CONTRIBUTING.md",
+  "/CODE_OF_CONDUCT.md",
+  "/SECURITY.md",
+  "/LICENSE",
+]
+
+[tool.pytest.ini_options]
+minversion = "9.0"
+addopts = ["-ra", "--strict-config", "--strict-markers", "-m", "not live"]
+testpaths = ["tests"]
+pythonpath = [".", "examples"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+xfail_strict = true
+filterwarnings = ["error"]
+markers = [
+  "live: calls a real OpenAI-compatible model; deselected unless run with -m live",
+  "code_detection: needs the tree-sitter grammars that parsefabric downloads on first use",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["contextsage"]
+
+[tool.coverage.report]
+fail_under = 100
+show_missing = true
+skip_covered = true
+
 [tool.ruff]
-line-length = 100
+line-length = 88
 target-version = "py312"
-src = ["src", "tests", "examples"]
+src = ["src", "tests", "examples", "."]
 
 [tool.ruff.lint]
 select = [
-    "E", "F", "I", "UP", "B", "C4", "SIM", "PL", "RUF", "N", "ANN",
+  "A",
+  "ANN",
+  "ASYNC",
+  "B",
+  "C4",
+  "D",
+  "DTZ",
+  "E",
+  "F",
+  "FURB",
+  "I",
+  "N",
+  "PERF",
+  "PIE",
+  "PL",
+  "PT",
+  "PTH",
+  "RET",
+  "RUF",
+  "S",
+  "SIM",
+  "T20",
+  "UP",
+  "W",
 ]
-ignore = [
-    "ANN401", # Any is sometimes legitimately required for heterogeneous content
-    "PLR0913", # many constructor params are intentional for explicit configuration
-]
+ignore = ["D105", "D107", "PLR0913"]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["ANN", "PLR2004", "S101", "PLC0415", "RUF012", "RUF059"]
-"examples/*" = ["ANN", "T201", "PLR0915", "PLR2004"]
+"tests/**/*.py" = ["ANN", "D", "PLC0415", "PLR2004", "S101", "S102", "S311"]
+"examples/**/*.py" = ["D", "PLR2004", "T201"]
+"examples/verify_examples.py" = ["S603"]
+"benchmarks/**/*.py" = ["D", "PLR2004", "S311", "T201"]
 
-[tool.black]
-line-length = 100
-target-version = ["py312"]
+[tool.ruff.lint.pydocstyle]
+convention = "google"
 
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-asyncio_mode = "auto"
-markers = [
-    "integration: tests exercising real LangGraph/LangChain integration paths",
-    "slow: slower or higher-fidelity tests",
-]
+[tool.ruff.lint.isort]
+known-first-party = ["contextsage", "examples", "benchmarks", "tests"]
+
+[tool.ruff.format]
+docstring-code-format = true
+
+[tool.pyrefly]
+project-includes = ["src", "tests", "examples", "benchmarks"]
+search-path = ["src", "examples", "."]
+python-version = "3.12"

@@ -1,0 +1,11 @@
+flowchart TB
+    unit["Content unit"] --> structural{"User correction, user-stated<br/>identifier, identifier in a failure,<br/>or one side of a conflict?"}
+    structural -- yes --> must["Must preserve"]
+    structural -- no --> score["Importance score: recency,<br/>instructions, errors, decisions,<br/>identifiers, repetition"]
+    score --> policy{"Policy<br/>thresholds"}
+    policy --> must
+    policy --> should["Should preserve"]
+    policy --> compressible["Compressible"]
+    must --> lossless["Lossless compaction only:<br/>minified JSON, counted repeats,<br/>duplicate table rows"]
+    should --> lossless
+    compressible --> lossy["Also collapses similar log lines;<br/>maximum_compression groups and<br/>samples long JSON lists"]

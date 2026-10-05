@@ -1,22 +1,31 @@
-"""ContextSage: intelligent, production-grade context summarization for LangGraph agents.
+"""ContextSage: information-aware context summarization for LangChain agents.
 
-ContextSage is a narrowly-focused enhancement layer over LangGraph/LangChain's
-built-in ``SummarizationMiddleware``. It analyzes heterogeneous agent context
-(mixed natural language, JSON, logs, errors, tables, code) to decide *what*
-should be preserved, compressed, or left untouched, then delegates the
-actual LLM-based semantic summarization to LangGraph itself.
-
-The public surface of this package is intentionally small — a single class:
+ContextSage is a drop-in replacement for LangChain's ``SummarizationMiddleware``.
+It parses heterogeneous agent context with parsefabric, keeps what matters,
+compacts what is repetitive, lets LangChain write the summary, verifies that
+nothing important was lost, and records provenance with langgraph-xai.
 
     from contextsage import IntelligentSummarizationMiddleware
-
-See ``docs/`` for the full architecture, or the module docstrings under
-``contextsage.middleware``, ``contextsage.planning``, ``contextsage.validation``,
-etc. for internal implementation details.
 """
 
-from contextsage.middleware.summarization import IntelligentSummarizationMiddleware
+import logging
 
-__all__ = ["IntelligentSummarizationMiddleware", "__version__"]
+from contextsage._pipeline.signals import DEFAULT_IDENTIFIER_PATTERNS
+from contextsage.errors import ConfigurationError, ContextSageError
+from contextsage.events import RecoveryStatus, SummarizationEvent, ValidationStatus
+from contextsage.middleware import IntelligentSummarizationMiddleware
 
-__version__ = "0.1.0"
+__version__ = "1.0.0"
+
+__all__ = [
+    "DEFAULT_IDENTIFIER_PATTERNS",
+    "ConfigurationError",
+    "ContextSageError",
+    "IntelligentSummarizationMiddleware",
+    "RecoveryStatus",
+    "SummarizationEvent",
+    "ValidationStatus",
+    "__version__",
+]
+
+logging.getLogger("contextsage").addHandler(logging.NullHandler())

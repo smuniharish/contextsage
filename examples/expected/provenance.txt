@@ -1,0 +1,10 @@
+summary-2 is generation 2
+  summary-1 -> summary-2 (derived_from)
+  user-3 -> summary-2 (derived_from)
+  assistant-3 -> summary-2 (derived_from)
+  user-4 -> summary-2 (derived_from)
+  assistant-4 -> summary-2 (derived_from)
+  user-1 -> summary-1 (derived_from)
+  assistant-1 -> summary-1 (derived_from)
+  user-2 -> summary-1 (derived_from)
+  assistant-2 -> summary-1 (derived_from)

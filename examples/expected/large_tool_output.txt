@@ -1,0 +1,13 @@
+154 lines before, 7 after
+
+Diagnostics for incident INC-4410 (checkout latency).
+{"service":"checkout","region":"eu-west-1","orders":[{"__repeated__":25,"value":{"sku":"A-1","qty":1,"state":"queued"}},{"sku":"B-7","qty":2,"state":"failed","order_id":"ORD-5521"}]}
+2026-10-04T08:00:00Z INFO checkout-worker-0 heartbeat ok
+... 148 similar lines omitted (lines 4-151) ...
+2026-10-04T08:02:29Z INFO checkout-worker-1 heartbeat ok
+2026-10-04T08:02:31Z WARN slow query on orders took 2300 ms
+2026-10-04T08:02:32Z ERROR payment authorization failed for order ORD-5521
+
+tokens: 2538 -> 173
+compacted units: 2
+content kinds: {'json': 1, 'log': 2, 'text': 2}

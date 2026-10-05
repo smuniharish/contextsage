@@ -1,0 +1,53 @@
+name: Bug report
+description: Report a problem with ContextSage.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        Thanks for reporting a problem. Please report security vulnerabilities
+        privately as described in the security policy, not here, and never
+        paste API keys or private conversation content.
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe the problem and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: >-
+        A short script that reproduces the problem, ideally with a scripted
+        chat model such as GenericFakeChatModel instead of a real provider.
+      render: python
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Actual output, traceback or SummarizationEvent
+      render: text
+  - type: input
+    id: contextsage-version
+    attributes:
+      label: ContextSage version
+      placeholder: python -c "import contextsage; print(contextsage.__version__)"
+    validations:
+      required: true
+  - type: input
+    id: langchain-version
+    attributes:
+      label: LangChain and LangGraph versions
+      placeholder: langchain 1.4.3, langgraph 1.2.12
+    validations:
+      required: true
+  - type: input
+    id: python-version
+    attributes:
+      label: Python version and operating system
+      placeholder: Python 3.13 on Ubuntu 24.04
+    validations:
+      required: true

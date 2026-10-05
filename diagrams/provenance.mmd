@@ -1,0 +1,8 @@
+flowchart LR
+    u1["user-1"] -- derived_from --> s1
+    a1["assistant-1"] -- derived_from --> s1
+    u2["user-2"] -- derived_from --> s1
+    s1["Summary 1<br/>generation 1"] -- derived_from --> s2
+    u3["user-3"] -- derived_from --> s2
+    a3["assistant-3"] -- derived_from --> s2
+    s2["Summary 2<br/>generation 2"] --> lineage["alineage(summary_id)<br/>reaches every<br/>original message"]

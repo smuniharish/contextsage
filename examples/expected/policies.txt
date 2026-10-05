@@ -1,0 +1,9 @@
+maximum_preservation (551 characters):
+  {"warehouse":"berlin-2","pallets":[{"sku":"A-1","state":"ok"},{"sku":"A-1","state":"ok"},{"sku":"A-1","state":"ok"},{"sku":"B-2","state":"ok"},{"sku":"A-1","state":"ok"},{"sku":"A-1","state":"ok"},{"sku":"A-1","state":"ok"},{"sku":"C-0","state":"ok"},{"sku":"C-1","state":"ok"},{"sku":"C-2","state":"ok"},{"sku":"C-3","state":"ok"},{"sku":"C-4","state":"ok"},{"sku":"C-5","state":"ok"},{"sku":"C-6","state":"ok"},{"sku":"C-7","state":"ok"},{"sku":"C-8","state":"ok"},{"sku":"C-9","state":"ok"},{"sku":"C-10","state":"ok"},{"sku":"C-11","state":"ok"}]}
+
+balanced (497 characters):
+  {"warehouse":"berlin-2","pallets":[{"__repeated__":3,"value":{"sku":"A-1","state":"ok"}},{"sku":"B-2","state":"ok"},{"__repeated__":3,"value":{"sku":"A-1","state":"ok"}},{"sku":"C-0","state":"ok"},{"sku":"C-1","state":"ok"},{"sku":"C-2","state":"ok"},{"sku":"C-3","state":"ok"},{"sku":"C-4","state":"ok"},{"sku":"C-5","state":"ok"},{"sku":"C-6","state":"ok"},{"sku":"C-7","state":"ok"},{"sku":"C-8","state":"ok"},{"sku":"C-9","state":"ok"},{"sku":"C-10","state":"ok"},{"sku":"C-11","state":"ok"}]}
+
+maximum_compression (353 characters):
+  {"warehouse":"berlin-2","pallets":[{"__repeated__":6,"value":{"sku":"A-1","state":"ok"}},{"sku":"B-2","state":"ok"},{"sku":"C-0","state":"ok"},{"sku":"C-1","state":"ok"},{"sku":"C-2","state":"ok"},{"__omitted__":4},{"sku":"C-7","state":"ok"},{"sku":"C-8","state":"ok"},{"sku":"C-9","state":"ok"},{"sku":"C-10","state":"ok"},{"sku":"C-11","state":"ok"}]}
+

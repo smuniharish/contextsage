@@ -1,0 +1,14 @@
+flowchart TB
+    start(["Before a model call"]) --> trigger{"Trigger met, or the<br/>budget exceeded?"}
+    trigger -- no --> unchanged(["History unchanged"])
+    trigger -- yes --> analyze["Parse messages into content units,<br/>score them and extract the<br/>facts that must survive"]
+    analyze --> compact["Compact JSON, tables and<br/>repetitive logs"]
+    compact --> older{"Messages older than<br/>the keep window?"}
+    older -- no --> compacted(["Compacted history,<br/>no summary"])
+    older -- yes --> summary["LangChain writes the summary"]
+    summary -- "model fails" --> fallback["Trim to the keep window<br/>and restate lost facts"]
+    fallback --> trimmed(["Trimmed history"])
+    summary --> check{"Every fact and<br/>tool call intact?"}
+    check -- yes --> summarized(["Summarized history"])
+    check -- "facts missing" --> restate["Restate the missing facts<br/>in the summary"]
+    restate --> summarized

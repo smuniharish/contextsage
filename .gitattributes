@@ -1,0 +1,5 @@
+# Normalize line endings in the repository; check out text with native endings.
+* text=auto
+
+# Binary assets.
+*.png binary

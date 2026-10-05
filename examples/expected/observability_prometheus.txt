@@ -1,0 +1,4 @@
+Serving metrics on http://localhost:9109/metrics
+602 -> 48 tokens, validation=passed, recovery=none_needed
+4277 -> 48 tokens, validation=passed, recovery=none_needed
+15827 -> 48 tokens, validation=passed, recovery=none_needed

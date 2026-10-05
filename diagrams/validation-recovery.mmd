@@ -1,0 +1,10 @@
+flowchart TB
+    summary["Summarized history"] --> facts{"Every must-preserve<br/>fact present?"}
+    facts -- yes --> pairs{"Every tool result<br/>has its tool call?"}
+    facts -- no --> restate["Restate the missing facts<br/>verbatim in the summary"]
+    restate --> pairs
+    pairs -- yes --> valid(["passed or<br/>failed_recovered"])
+    pairs -- no --> orphaned(["failed_unrecovered,<br/>logged as a warning"])
+    failure["Summary model fails"] --> trim["Trim to the keep window with<br/>trim_messages, keeping the last<br/>tool exchange whole"]
+    trim --> notice["Add a notice with the latest<br/>request and the lost facts"]
+    notice --> fallback(["trimmed_fallback"])

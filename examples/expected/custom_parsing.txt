@@ -1,0 +1,2 @@
+built-in parsing only: {'code': 2, 'log': 2, 'text': 3}
+with the SQL parser: {'log': 2, 'sql': 2, 'text': 3}

@@ -1,3 +1,0 @@
-project_includes = ["src/contextsage/**/*.py"]
-project_excludes = ["**/__pycache__/**"]
-python_version = "3.12"
