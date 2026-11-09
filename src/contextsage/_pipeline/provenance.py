@@ -1,64 +1,56 @@
-"""Provenance links from summarized messages to their summary, via langgraph-xai."""
+"""Recording summary lineage in an agxai runtime's provenance store."""
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import TYPE_CHECKING
 from uuid import NAMESPACE_URL, uuid5
 
-from langgraph_xai import ExecutionContext, ProvenanceLink
+from agxai import ExecutionContext, MemoryOperation, ProvenanceLink, ProvenanceStore
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Mapping, Sequence
 
-    from langgraph_xai import ProvenanceStore
+    from agxai import XAIRuntime
 
 logger = logging.getLogger("contextsage")
 
-APPLICATION_ID = "contextsage"
-TENANT_ID = "default"
-DEFAULT_GRAPH_ID = "agent"
 RELATION = "derived_from"
+MEMORY_NAMESPACE = "contextsage"
 _RUN_NAMESPACE = uuid5(NAMESPACE_URL, "https://github.com/smuniharish/contextsage")
 
 
-def execution_context(
-    thread_id: str | None, graph_id: str | None = None
-) -> ExecutionContext:
-    """Return the provenance scope of a LangGraph thread.
-
-    The run ID is derived deterministically from the thread ID, so the lineage
-    of any summary in a thread can be queried later. Without a checkpointer
-    there is no thread, and all summaries share one default scope.
-
-    Args:
-        thread_id: The LangGraph thread ID, if any.
-        graph_id: The LangGraph graph ID, if known.
-
-    Returns:
-        The execution context links are written and queried in.
-    """
-    return ExecutionContext(
-        application_id=APPLICATION_ID,
-        tenant_id=TENANT_ID,
-        graph_id=graph_id or DEFAULT_GRAPH_ID,
-        run_id=uuid5(_RUN_NAMESPACE, thread_id or ""),
-        thread_id=thread_id,
-    )
-
-
 class ProvenanceRecorder:
-    """Writes one ``derived_from`` link per summarized message to a store.
+    """Writes one ``derived_from`` link per summarized message.
 
-    Recording is best effort: a store failure is logged and never interrupts
-    the agent.
+    Links are scoped to a run whose ID is derived from the thread ID, so the
+    lineage of any summary in a thread can be queried later without knowing
+    which agent run produced it. Recording is best effort: a store failure is
+    logged and never interrupts the caller.
 
     Args:
-        store: Any langgraph-xai ``ProvenanceStore``.
+        runtime: The agxai runtime whose registered ``ProvenanceStore`` and
+            identity are used.
     """
 
-    def __init__(self, store: ProvenanceStore) -> None:
-        self.store = store
+    def __init__(self, runtime: XAIRuntime) -> None:
+        self.runtime = runtime
+
+    @property
+    def store(self) -> ProvenanceStore:
+        """The store currently registered on the runtime."""
+        return self.runtime.registry.require(ProvenanceStore)
+
+    def context(self, thread_id: str | None, graph_id: str | None = None) -> ExecutionContext:
+        """Return the provenance scope of a conversation thread."""
+        return ExecutionContext(
+            application_id=self.runtime.application_id,
+            tenant_id=self.runtime.tenant_id,
+            graph_id=graph_id or self.runtime.graph_id,
+            run_id=uuid5(_RUN_NAMESPACE, thread_id or ""),
+            thread_id=thread_id,
+        )
 
     async def record(
         self,
@@ -67,19 +59,37 @@ class ProvenanceRecorder:
         summary_id: str,
         thread_id: str | None,
         graph_id: str | None,
+        metadata: Mapping[str, object],
     ) -> None:
-        """Link every source message to the summary that replaced it."""
-        context = execution_context(thread_id, graph_id)
+        """Link every source message to the summary that replaced it.
+
+        Inside an instrumented agxai call, the summary is also recorded as a
+        memory write of the active run.
+        """
+        context = self.context(thread_id, graph_id)
+        store = self.store
         try:
-            for source_id in source_ids:
-                await self.store.write(
-                    ProvenanceLink(
-                        source_id=source_id,
-                        target_id=summary_id,
-                        relation=RELATION,
-                        context=context,
-                        metadata={"recorded_by": APPLICATION_ID},
+            async with asyncio.TaskGroup() as group:
+                for source_id in source_ids:
+                    group.create_task(
+                        store.write(
+                            ProvenanceLink(
+                                source_id=source_id,
+                                target_id=summary_id,
+                                relation=RELATION,
+                                context=context,
+                                metadata={"recorded_by": MEMORY_NAMESPACE},
+                            )
+                        )
                     )
+            run = self.runtime.current_run
+            if run is not None:
+                await self.runtime.record_memory(
+                    summary_id,
+                    MemoryOperation.WRITE,
+                    namespace=MEMORY_NAMESPACE,
+                    metadata=metadata,
+                    run=run,
                 )
         except Exception:
             logger.warning(
@@ -89,9 +99,9 @@ class ProvenanceRecorder:
             )
 
     async def lineage(
-        self, summary_id: str, thread_id: str | None
+        self, summary_id: str, thread_id: str | None, graph_id: str | None = None
     ) -> tuple[ProvenanceLink, ...]:
         """Return every upstream link of a summary, nearest first."""
         return tuple(
-            await self.store.lineage(summary_id, context=execution_context(thread_id))
+            await self.store.lineage(summary_id, context=self.context(thread_id, graph_id))
         )

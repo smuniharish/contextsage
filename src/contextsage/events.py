@@ -41,10 +41,11 @@ type RecoveryStatus = Literal[
 class SummarizationEvent:
     """Aggregate, content-free record of one summarization.
 
-    One event is logged to the ``contextsage`` logger at ``INFO`` level and
-    passed to the optional ``observability_hook`` each time the middleware
-    rewrites the message history. Events contain counts, ratios and statuses
-    only: never message content, tool output or credentials.
+    One event is delivered to the configured `contextsage.EventSink` each
+    time the engine rewrites the message history; the default sink logs it to
+    the ``contextsage`` logger at ``INFO`` level. Events contain counts,
+    ratios and statuses only: never message content, tool output or
+    credentials.
 
     Attributes:
         summary_id: Message ID of the summary that now opens the history, or
@@ -52,8 +53,8 @@ class SummarizationEvent:
         generation: How many summaries this one descends from: 1 for a first
             summary, 2 for a summary of a summary, and 0 when no summary was
             produced.
-        thread_id: LangGraph thread the summary belongs to, if the agent runs
-            with a checkpointer.
+        thread_id: Conversation thread the summary belongs to, if the caller
+            named one.
         trigger_reason: Why summarization ran.
         input_messages: Messages in the history before summarization.
         input_tokens: Tokens in the history before summarization.
@@ -71,7 +72,8 @@ class SummarizationEvent:
             ``log``.
         validation_status: See `ValidationStatus`.
         recovery_status: See `RecoveryStatus`.
-        latency_ms: Wall-clock time spent in the middleware, in milliseconds.
+        policy: Name of the preservation policy in effect.
+        latency_ms: Wall-clock time spent summarizing, in milliseconds.
     """
 
     summary_id: str | None
@@ -92,6 +94,7 @@ class SummarizationEvent:
     content_kinds: dict[str, int] = field(default_factory=dict)
     validation_status: ValidationStatus
     recovery_status: RecoveryStatus
+    policy: str
     latency_ms: float
 
     def as_dict(self) -> dict[str, object]:

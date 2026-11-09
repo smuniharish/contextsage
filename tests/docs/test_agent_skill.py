@@ -15,9 +15,7 @@ def frontmatter() -> tuple[dict[str, str], str]:
     text = (SKILL / "SKILL.md").read_text(encoding="utf-8").replace("\r\n", "\n")
     match = _FRONTMATTER.match(text)
     assert match, "SKILL.md must start with YAML frontmatter"
-    fields = dict(
-        line.split(": ", 1) for line in match["header"].splitlines() if line.strip()
-    )
+    fields = dict(line.split(": ", 1) for line in match["header"].splitlines() if line.strip())
     return fields, match["body"]
 
 

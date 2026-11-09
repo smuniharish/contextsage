@@ -5,7 +5,8 @@ from __future__ import annotations
 import json
 
 from hypothesis import strategies as st
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
+
+from contextsage import Message, ToolCall
 
 WORDS = st.sampled_from(
     [
@@ -92,27 +93,22 @@ def documents(draw: st.DrawFn) -> str:
 
 
 @st.composite
-def conversations(draw: st.DrawFn) -> list:
+def conversations(draw: st.DrawFn) -> list[Message]:
     """Valid histories: optional system prompt, turns and complete tool exchanges."""
-    messages: list = []
+    messages: list[Message] = []
     if draw(st.booleans()):
-        messages.append(SystemMessage(draw(SENTENCES), id="system"))
+        messages.append(Message("system", draw(SENTENCES), id="system"))
     turns = draw(st.integers(min_value=1, max_value=8))
     for turn in range(turns):
-        messages.append(HumanMessage(draw(documents()), id=f"h{turn}"))
+        messages.append(Message("user", draw(documents()), id=f"h{turn}"))
         tools = draw(st.integers(min_value=0, max_value=2))
         if tools:
-            calls = [
-                {"id": f"c{turn}-{index}", "name": "lookup", "args": {}}
-                for index in range(tools)
-            ]
-            messages.append(AIMessage("", id=f"call{turn}", tool_calls=calls))
+            calls = tuple(ToolCall(f"c{turn}-{index}", "lookup") for index in range(tools))
+            messages.append(Message("assistant", "", id=f"call{turn}", tool_calls=calls))
             messages.extend(
-                ToolMessage(
-                    draw(documents()), tool_call_id=call["id"], id=f"t{call['id']}"
-                )
+                Message("tool", draw(documents()), id=f"t{call.id}", tool_call_id=call.id)
                 for call in calls
             )
         if draw(st.booleans()) or turn < turns - 1:
-            messages.append(AIMessage(draw(SENTENCES), id=f"a{turn}"))
+            messages.append(Message("assistant", draw(SENTENCES), id=f"a{turn}"))
     return messages

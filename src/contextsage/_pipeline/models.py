@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Final
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
-    from langchain_core.messages import BaseMessage
+    from contextsage.messages import Fact, Message
 
 
 class Kind:
@@ -29,7 +29,7 @@ class Kind:
 SUMMARY_ROLE: Final = "summary"
 """Role of units from summary messages.
 
-A summary is a human message, but its text was written by the summary model,
+A summary is a user message, but its text was written by the summary model,
 so user signals such as corrections and instructions must not be read from it.
 """
 
@@ -114,10 +114,7 @@ class Unit:
     @property
     def has_error(self) -> bool:
         """Whether the unit is an error report or has an error-level line."""
-        return (
-            self.kind == Kind.ERROR
-            or severity_rank(self.severity) >= HIGH_SEVERITY_RANK
-        )
+        return self.kind == Kind.ERROR or severity_rank(self.severity) >= HIGH_SEVERITY_RANK
 
 
 @dataclass(frozen=True, slots=True)
@@ -140,21 +137,6 @@ class Contradiction:
 
 
 @dataclass(frozen=True, slots=True)
-class Fact:
-    """Information the rewritten history must still contain.
-
-    Attributes:
-        statement: The text restated verbatim if the fact goes missing.
-        required: Strings that must all appear in a single message, as whole
-            words and ignoring case, whitespace and apostrophe style, for the
-            fact to count as preserved.
-    """
-
-    statement: str
-    required: tuple[str, ...]
-
-
-@dataclass(frozen=True, slots=True)
 class Analysis:
     """Everything the pipeline learned about the history before summarizing."""
 
@@ -167,9 +149,7 @@ class Analysis:
     @property
     def must_preserve_count(self) -> int:
         """Number of units classified as must-preserve."""
-        return sum(
-            1 for level in self.preservation.values() if level is Preservation.MUST
-        )
+        return sum(1 for level in self.preservation.values() if level is Preservation.MUST)
 
     def kind_counts(self) -> dict[str, int]:
         """Number of units per content kind, sorted by kind."""
@@ -183,6 +163,10 @@ class Analysis:
 class Prepared:
     """The history after deterministic compaction, with its analysis."""
 
-    messages: list[BaseMessage]
+    messages: list[Message]
     analysis: Analysis
     compacted_units: int
+
+
+EMPTY_ANALYSIS = Analysis(units=(), importance={}, preservation={}, contradictions=(), facts=())
+"""The analysis of a history that could not be analyzed."""

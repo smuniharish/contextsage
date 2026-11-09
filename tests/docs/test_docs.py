@@ -40,9 +40,7 @@ _REPOSITORY = re.compile(
     r"^https://(?:github\.com/smuniharish/contextsage/(?:blob|tree)/master"
     r"|raw\.githubusercontent\.com/smuniharish/contextsage/master)/(?P<path>[^#?]+)"
 )
-_READ_THE_DOCS = re.compile(
-    r"^https://contextsage\.readthedocs\.io/en/latest/(?P<page>[^#?]*)"
-)
+_READ_THE_DOCS = re.compile(r"^https://contextsage\.readthedocs\.io/en/latest/(?P<page>[^#?]*)")
 _INTERNAL = re.compile(
     r"\bADRs?\b|architecture decision|[A-Za-z]:\\Users\\|/home/\w+/|\.ps1\b"
     r"|experientiallabs|EXPLABS|\bluna\b|contextsage\._pipeline|_pipeline/",
@@ -128,9 +126,7 @@ def test_documents_contain_no_internal_references(path: Path):
 def test_manifest_matches_sources_and_config():
     manifest = json.loads((RENDERED / "manifest.json").read_text(encoding="utf-8"))
     assert manifest["renderer"].startswith("@mermaid-js/mermaid-cli@")
-    assert manifest["config"] == _text_sha256(DIAGRAMS / "mermaid-config.json"), (
-        RENDER_HINT
-    )
+    assert manifest["config"] == _text_sha256(DIAGRAMS / "mermaid-config.json"), RENDER_HINT
     assert manifest["sources"] == {
         path.name: _text_sha256(path) for path in sorted(DIAGRAMS.glob("*.mmd"))
     }, RENDER_HINT
@@ -142,9 +138,7 @@ def test_every_source_has_exactly_one_rendered_png():
     assert {path.stem for path in RENDERED.glob("*.png")} == sources
 
 
-@pytest.mark.parametrize(
-    "path", sorted(RENDERED.glob("*.png")), ids=lambda path: path.name
-)
+@pytest.mark.parametrize("path", sorted(RENDERED.glob("*.png")), ids=lambda path: path.name)
 def test_rendered_diagram_is_a_legible_png(path: Path):
     data = path.read_bytes()
     width, height = struct.unpack(">II", data[16:24])
@@ -156,6 +150,4 @@ def test_rendered_diagram_is_a_legible_png(path: Path):
 
 def test_every_diagram_is_shown_in_the_documentation():
     pages = "\n".join(path.read_text(encoding="utf-8") for path in DOCS.rglob("*.md"))
-    assert {
-        path.name for path in RENDERED.glob("*.png") if path.name not in pages
-    } == set()
+    assert {path.name for path in RENDERED.glob("*.png") if path.name not in pages} == set()

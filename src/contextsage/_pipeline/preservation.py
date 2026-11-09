@@ -3,41 +3,22 @@
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING
 
 from contextsage._pipeline.importance import (
     CONSTRAINT,
     CORRECTION,
     normalize_apostrophes,
 )
-from contextsage._pipeline.models import Fact, Preservation
+from contextsage._pipeline.models import Preservation
+from contextsage.messages import Fact
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
 
     from contextsage._pipeline.models import Contradiction, Importance, Unit
+    from contextsage.contracts import PreservationPolicy
 
-type Policy = Literal["balanced", "maximum_preservation", "maximum_compression"]
-POLICIES: tuple[Policy, ...] = (
-    "balanced",
-    "maximum_preservation",
-    "maximum_compression",
-)
-
-
-@dataclass(frozen=True, slots=True)
-class _Thresholds:
-    must: float
-    should: float
-    error_must: float
-
-
-_THRESHOLDS: Mapping[Policy, _Thresholds] = {
-    "maximum_preservation": _Thresholds(must=0.60, should=0.30, error_must=0.45),
-    "balanced": _Thresholds(must=0.75, should=0.45, error_must=0.60),
-    "maximum_compression": _Thresholds(must=0.90, should=0.65, error_must=0.80),
-}
 _STRUCTURAL_REASONS = frozenset(
     {"user_correction", "user_identifier", "identifier_in_failure_context"}
 )
@@ -61,7 +42,7 @@ def classify(
     units: Sequence[Unit],
     importance: Mapping[str, Importance],
     contradictions: Sequence[Contradiction],
-    policy: Policy,
+    policy: PreservationPolicy,
 ) -> dict[str, Preservation]:
     """Assign a preservation level to every unit.
 
@@ -79,10 +60,8 @@ def classify(
     Returns:
         The preservation level of each unit, by unit ID.
     """
-    thresholds = _THRESHOLDS[policy]
-    contradicting = {c.unit_a for c in contradictions} | {
-        c.unit_b for c in contradictions
-    }
+    thresholds = policy.thresholds
+    contradicting = {c.unit_a for c in contradictions} | {c.unit_b for c in contradictions}
     levels: dict[str, Preservation] = {}
     for unit in units:
         score = importance[unit.unit_id]
@@ -119,9 +98,7 @@ def _sentence(text: str, match: re.Match[str]) -> str | None:
     start = 0 if start < 0 else start + 1
     ends = [
         position
-        for position in (
-            text.find(mark, match.end()) for mark in ("\n", ". ", "! ", "? ")
-        )
+        for position in (text.find(mark, match.end()) for mark in ("\n", ". ", "! ", "? "))
         if position >= 0
     ]
     end = min(ends) + 1 if ends else len(text)

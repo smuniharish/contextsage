@@ -7,16 +7,15 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
 
-    from langchain_core.messages import BaseMessage
-
     from contextsage._pipeline.models import Unit
+    from contextsage.messages import Message
 
 
 def rebuild(
-    messages: Sequence[BaseMessage],
+    messages: Sequence[Message],
     units: Sequence[Unit],
     replacements: Mapping[str, str],
-) -> list[BaseMessage]:
+) -> list[Message]:
     """Return the messages with compacted units substituted.
 
     Units tile their message, so joining every unit's text (replaced where a
@@ -40,8 +39,6 @@ def rebuild(
     rebuilt = list(messages)
     for index, message_units in by_message.items():
         if any(unit.unit_id in replacements for unit in message_units):
-            text = "".join(
-                replacements.get(unit.unit_id, unit.text) for unit in message_units
-            )
-            rebuilt[index] = messages[index].model_copy(update={"content": text})
+            text = "".join(replacements.get(unit.unit_id, unit.text) for unit in message_units)
+            rebuilt[index] = messages[index].with_content(text)
     return rebuilt

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from contextsage._pipeline.decomposition import Decomposer
 from contextsage._pipeline.importance import score
 from contextsage._pipeline.lineage import carried_facts
 from contextsage._pipeline.models import Analysis, Prepared
@@ -14,35 +13,26 @@ from contextsage._pipeline.relationships import find_contradictions
 from contextsage._pipeline.transformation import compact, plan
 
 if TYPE_CHECKING:
-    import re
     from collections.abc import Sequence
 
-    from langchain_core.messages import BaseMessage
-    from parsefabric import Parser
-
-    from contextsage._pipeline.preservation import Policy
+    from contextsage._pipeline.decomposition import Decomposer
+    from contextsage.contracts import PreservationPolicy
+    from contextsage.messages import Message
 
 
 class Pipeline:
     """Decomposes, scores and compacts a history.
 
     Args:
-        parser: The parsefabric parser for message text.
-        identifier_patterns: Patterns whose matches must be preserved.
+        decomposer: Splits messages into content units.
         policy: The preservation policy.
     """
 
-    def __init__(
-        self,
-        *,
-        parser: Parser,
-        identifier_patterns: Sequence[re.Pattern[str]],
-        policy: Policy,
-    ) -> None:
-        self._decomposer = Decomposer(parser, identifier_patterns)
+    def __init__(self, decomposer: Decomposer, policy: PreservationPolicy) -> None:
+        self._decomposer = decomposer
         self._policy = policy
 
-    async def prepare(self, messages: Sequence[BaseMessage]) -> Prepared:
+    async def prepare(self, messages: Sequence[Message]) -> Prepared:
         """Analyze the history and compact what can be compacted safely.
 
         Args:
@@ -62,10 +52,11 @@ class Pipeline:
             contradictions,
             carried=carried_facts(messages),
         )
+        mode = self._policy.json_compaction
         replacements = {
             unit.unit_id: text
             for unit, lossy in plan(units, preservation, messages)
-            if (text := compact(unit, policy=self._policy, lossy=lossy)) is not None
+            if (text := compact(unit, mode=mode, lossy=lossy)) is not None
         }
         return Prepared(
             messages=rebuild(messages, units, replacements),

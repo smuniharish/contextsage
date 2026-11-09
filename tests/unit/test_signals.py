@@ -89,9 +89,7 @@ def test_masks_keep_lines_and_whitespace():
 
 
 def test_hexadecimal_runs_are_ids_only_with_a_digit():
-    assert mask_volatile("deadbeef-cafe a1b2c3d4-e5f6 badc0ffee") == (
-        "deadbeef-cafe <id> <id>"
-    )
+    assert mask_volatile("deadbeef-cafe a1b2c3d4-e5f6 badc0ffee") == ("deadbeef-cafe <id> <id>")
 
 
 def test_hexadecimal_masking_is_linear():
@@ -121,8 +119,7 @@ def test_canonical_severity(value, expected):
 
 def test_severity_rank_orders_levels():
     ranks = [
-        severity_rank(level)
-        for level in (None, "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL")
+        severity_rank(level) for level in (None, "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL")
     ]
     assert ranks == sorted(ranks)
     assert ranks[0] == 0

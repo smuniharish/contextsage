@@ -16,9 +16,7 @@ def budgets(draw: st.DrawFn) -> Budget:
         maximum_context_tokens=maximum,
         reserved_output_tokens=draw(st.integers(min_value=0, max_value=room // 2)),
         safety_margin=margin,
-        summarization_overhead_tokens=draw(
-            st.integers(min_value=0, max_value=room // 2)
-        ),
+        summarization_overhead_tokens=draw(st.integers(min_value=0, max_value=room // 2)),
     )
 
 
@@ -29,9 +27,7 @@ CONDITIONS = st.one_of(
     st.tuples(st.just("messages"), st.integers(min_value=1, max_value=400)),
     st.tuples(st.just("fraction"), st.floats(min_value=0.01, max_value=1.0)),
 )
-CLAUSES = st.lists(CONDITIONS, min_size=1, max_size=3, unique_by=lambda c: c[0]).map(
-    dict
-)
+CLAUSES = st.lists(CONDITIONS, min_size=1, max_size=3, unique_by=lambda c: c[0]).map(dict)
 
 
 @given(budgets())
@@ -71,17 +67,12 @@ def test_token_triggers_are_monotonic(budget, threshold, first, second):
 )
 def test_lists_are_or_and_clauses_are_and(budget, spec, tokens, messages):
     combined = Trigger(spec, budget).evaluate(tokens=tokens, messages=messages)
-    items = [
-        Trigger(item, budget).evaluate(tokens=tokens, messages=messages)
-        for item in spec
-    ]
+    items = [Trigger(item, budget).evaluate(tokens=tokens, messages=messages) for item in spec]
     assert (combined is not None) == any(item is not None for item in items)
     for item in spec:
         if isinstance(item, dict):
             parts = [
-                Trigger((kind, value), budget).evaluate(
-                    tokens=tokens, messages=messages
-                )
+                Trigger((kind, value), budget).evaluate(tokens=tokens, messages=messages)
                 for kind, value in item.items()
             ]
             whole = Trigger(item, budget).evaluate(tokens=tokens, messages=messages)

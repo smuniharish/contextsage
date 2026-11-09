@@ -1,24 +1,28 @@
 [build-system]
-requires = ["hatchling>=1.32.4"]
-build-backend = "hatchling.build"
+requires = ["uv_build>=0.13.7,<0.14"]
+build-backend = "uv_build"
 
 [project]
 name = "contextsage"
-dynamic = ["version"]
-description = "Information-aware context summarization middleware for LangChain and LangGraph agents."
+version = "1.0.1"
+description = "Information-aware, framework-agnostic context summarization for AI agents."
 readme = "README.md"
 requires-python = ">=3.12"
 license = "Apache-2.0"
 license-files = ["LICENSE"]
-authors = [{ name = "S MUNI HARISH", email = "samamuniharish@gmail.com" }]
+authors = [
+  { name = "S MUNI HARISH", email = "samamuniharish@gmail.com" },
+]
 keywords = [
-  "langgraph",
-  "langchain",
-  "llm",
   "agents",
-  "middleware",
+  "llm",
   "summarization",
   "context-engineering",
+  "context-window",
+  "langchain",
+  "langgraph",
+  "agno",
+  "crewai",
   "provenance",
 ]
 classifiers = [
@@ -31,98 +35,157 @@ classifiers = [
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: 3.14",
+  "Programming Language :: Python :: 3.15",
   "Topic :: Scientific/Engineering :: Artificial Intelligence",
   "Topic :: Software Development :: Libraries :: Python Modules",
   "Typing :: Typed",
 ]
 dependencies = [
-  "langchain>=1.4.3,<2",
-  "langchain-core>=1.6.6,<2",
-  "langgraph>=1.2.12,<2",
-  "langgraph-xai>=1.0.0,<2",
-  "parsefabric>=0.1.0,<1",
+  "agxai>=1.0.2,<2",
+  "opentelemetry-api>=1.45.2,<2",
+  "parsefabric>=1.0.0,<2",
 ]
+
+[project.optional-dependencies]
+langchain = [
+  "langchain>=1.4.9,<2",
+  "langchain-core>=1.7.6,<2",
+  "langgraph>=1.2.20,<2",
+]
+otel = [
+  "opentelemetry-exporter-otlp-proto-http>=1.45.2,<2",
+  "opentelemetry-sdk>=1.45.2,<2",
+]
+all = ["contextsage[langchain,otel]"]
 
 [project.urls]
 Homepage = "https://github.com/smuniharish/contextsage"
-Documentation = "https://contextsage.readthedocs.io"
-Repository = "https://github.com/smuniharish/contextsage"
+Documentation = "https://contextsage.readthedocs.io/"
+Changelog = "https://github.com/smuniharish/contextsage/blob/master/CHANGELOG.md"
 Issues = "https://github.com/smuniharish/contextsage/issues"
-Changelog = "https://contextsage.readthedocs.io/en/latest/changelog/"
+Repository = "https://github.com/smuniharish/contextsage"
 
 [dependency-groups]
 test = [
-  "coverage[toml]>=7.16.2",
-  "hypothesis>=6.168.4,<7",
-  "pytest>=9.1.1",
-  "pytest-asyncio>=1.4",
+  "hypothesis>=6.170.15",
+  "opentelemetry-sdk>=1.45.2,<2",
+  "pytest>=9.2.0",
+  "pytest-asyncio>=1.4.1.post1",
+  "pytest-cov>=7.1.0",
+  "skills-ref>=0.1.1,<1",
 ]
-lint = ["ruff>=0.16.10"]
-types = ["pyrefly>=1.3.2"]
+lint = ["ruff>=0.17.4"]
+types = ["pyrefly>=1.4.1"]
 docs = [
-  "mkdocs>=1.6.1,<2",
-  "mkdocs-material>=9.7.7,<10",
-  "mkdocstrings>=1.0.6,<2",
-  "mkdocstrings-python>=2.0.9,<3",
-]
-examples = [
-  "deepagents>=0.7.21",
-  "langchain-openai>=1.6.7,<2",
-  "langgraph-swarm>=0.1.0",
-  "prometheus-client>=0.26.0",
-  "python-dotenv>=1.2.4",
-  "sqlglot>=30.21,<31",
+  "mkdocstrings-python>=2.0.10,<3",
+  "zensical>=0.1.0,<0.2",
 ]
 dev = [
   { include-group = "test" },
   { include-group = "lint" },
   { include-group = "types" },
-  { include-group = "docs" },
-  { include-group = "examples" },
+]
+examples = [
+  "deepagents>=0.7.34,<1",
+  "langchain-openai>=1.7.4,<2",
+  "langgraph-swarm>=0.1.0,<1",
+  "prometheus-client>=0.26.0,<1",
+  "psycopg[binary,pool]>=3.3.8,<4",
+  "psycopg-pool>=3.3.3,<4",
+  "python-dotenv>=1.2.4,<2",
+  "sqlglot>=30.30.0,<31",
 ]
 
 [tool.uv]
 default-groups = ["dev"]
 
-[tool.hatch.version]
-path = "src/contextsage/__init__.py"
-
-[tool.hatch.build.targets.wheel]
-packages = ["src/contextsage"]
-
-[tool.hatch.build.targets.sdist]
-include = [
-  "/src",
-  "/tests",
-  "/examples",
-  "/benchmarks",
-  "/docs",
-  "/diagrams",
-  "/scripts",
-  "/contextsage-skills",
-  "/mkdocs.yml",
-  "/.env.example",
-  "/README.md",
-  "/CHANGELOG.md",
-  "/CONTRIBUTING.md",
-  "/CODE_OF_CONDUCT.md",
-  "/SECURITY.md",
-  "/LICENSE",
-]
-
 [tool.pytest.ini_options]
-minversion = "9.0"
-addopts = ["-ra", "--strict-config", "--strict-markers", "-m", "not live"]
-testpaths = ["tests"]
-pythonpath = [".", "examples"]
+addopts = "-ra --strict-config --strict-markers -m 'not live and not examples'"
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+pythonpath = [".", "examples"]
 xfail_strict = true
-filterwarnings = ["error"]
+filterwarnings = [
+  "error",
+  # langsmith 0.14.17 calls asyncio.iscoroutinefunction at import time (deprecated in 3.14).
+  "ignore:'asyncio.iscoroutinefunction' is deprecated:DeprecationWarning:langsmith",
+]
 markers = [
-  "live: calls a real OpenAI-compatible model; deselected unless run with -m live",
+  "live: calls a real OpenAI-compatible model configured through CONTEXTSAGE_LLM_*",
+  "examples: executes the scripts under examples/",
   "code_detection: needs the tree-sitter grammars that parsefabric downloads on first use",
 ]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = [
+  "A",
+  "ARG",
+  "ASYNC",
+  "B",
+  "C4",
+  "D",
+  "DTZ",
+  "E",
+  "ERA",
+  "F",
+  "FURB",
+  "I",
+  "N",
+  "PERF",
+  "PIE",
+  "PT",
+  "PTH",
+  "RET",
+  "RUF",
+  "S",
+  "SIM",
+  "T20",
+  "TC",
+  "UP",
+  "W",
+]
+# Google style documents constructor arguments on the class, not on __init__.
+ignore = ["D105", "D107", "S101"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.isort]
+known-first-party = ["contextsage", "examples", "benchmarks", "tests"]
+
+[tool.ruff.lint.per-file-ignores]
+"examples/**/*.py" = ["ARG", "D", "S311", "T201"]
+"examples/verify_examples.py" = ["ARG", "D", "S603", "T201"]
+"benchmarks/**/*.py" = ["ARG", "D", "S311", "T201"]
+"scripts/**/*.py" = ["ARG", "D", "S603", "S607", "T201"]
+"tests/**/*.py" = ["A002", "ARG", "D", "S101", "S105", "S106", "S108", "S311"]
+"contextsage-skills/**/scripts/*.py" = ["ARG", "D", "T201"]
+"contextsage-skills/**/assets/*.py" = ["ARG", "D", "T201"]
+
+[tool.ruff.format]
+docstring-code-format = true
+
+[tool.pyrefly]
+project-includes = ["src", "tests", "examples", "benchmarks", "scripts", "contextsage-skills"]
+search-path = ["src", ".", "examples", "contextsage-skills/skills/contextsage-extend/assets"]
+python-version = "3.12"
+
+[[tool.pyrefly.sub-config]]
+matches = "examples/**"
+errors = { bad-specialization = false }
+
+[[tool.pyrefly.sub-config]]
+matches = "tests/**"
+errors = { bad-specialization = false }
+
+[[tool.pyrefly.sub-config]]
+matches = "contextsage-skills/**"
+errors = { bad-specialization = false }
 
 [tool.coverage.run]
 branch = true
@@ -132,57 +195,7 @@ source = ["contextsage"]
 fail_under = 100
 show_missing = true
 skip_covered = true
-
-[tool.ruff]
-line-length = 88
-target-version = "py312"
-src = ["src", "tests", "examples", "."]
-
-[tool.ruff.lint]
-select = [
-  "A",
-  "ANN",
-  "ASYNC",
-  "B",
-  "C4",
-  "D",
-  "DTZ",
-  "E",
-  "F",
-  "FURB",
-  "I",
-  "N",
-  "PERF",
-  "PIE",
-  "PL",
-  "PT",
-  "PTH",
-  "RET",
-  "RUF",
-  "S",
-  "SIM",
-  "T20",
-  "UP",
-  "W",
+exclude_also = [
+  "if TYPE_CHECKING:",
+  "^\\s*\\.\\.\\.$",
 ]
-ignore = ["D105", "D107", "PLR0913"]
-
-[tool.ruff.lint.per-file-ignores]
-"tests/**/*.py" = ["ANN", "D", "PLC0415", "PLR2004", "S101", "S102", "S311"]
-"examples/**/*.py" = ["D", "PLR2004", "T201"]
-"examples/verify_examples.py" = ["S603"]
-"benchmarks/**/*.py" = ["D", "PLR2004", "S311", "T201"]
-
-[tool.ruff.lint.pydocstyle]
-convention = "google"
-
-[tool.ruff.lint.isort]
-known-first-party = ["contextsage", "examples", "benchmarks", "tests"]
-
-[tool.ruff.format]
-docstring-code-format = true
-
-[tool.pyrefly]
-project-includes = ["src", "tests", "examples", "benchmarks"]
-search-path = ["src", "examples", "."]
-python-version = "3.12"

@@ -3,12 +3,8 @@ from __future__ import annotations
 import re
 
 import pytest
-from parsefabric.builtins import MixedContentParser
-from parsefabric.patterns import RegexPattern
 
-from contextsage import ConfigurationError
-from contextsage._pipeline import parsing
-from contextsage._pipeline.parsing import (
+from contextsage.parsing import (
     JSON_START,
     LEVEL_LOG_LINE,
     LOGFMT_LOG_LINE,
@@ -16,7 +12,6 @@ from contextsage._pipeline.parsing import (
     TIMESTAMPED_LOG_LINE,
     TRACEBACK_LINE,
     TRACEBACK_LINES,
-    build_parser,
     default_patterns,
 )
 
@@ -138,41 +133,3 @@ def test_default_patterns_are_fresh_and_uniquely_named():
     names = [pattern.name for pattern in first]
     assert len(names) == len(set(names))
     assert all(name.startswith("contextsage-") for name in names)
-
-
-def test_build_parser_without_code_detection():
-    assert isinstance(
-        build_parser(routes=(), fence_routes=None, code_languages=()),
-        MixedContentParser,
-    )
-
-
-def test_build_parser_rejects_conflicting_route_names():
-    route = (RegexPattern("contextsage-json", r"^SELECT"), parsing.JSONParser())
-    with pytest.raises(ConfigurationError, match="invalid content parsing"):
-        build_parser(routes=(route,), fence_routes=None, code_languages=())
-
-
-def test_build_parser_rejects_a_string_of_languages():
-    with pytest.raises(ConfigurationError, match="invalid content parsing"):
-        build_parser(routes=(), fence_routes=None, code_languages="python")
-
-
-def test_build_parser_rejects_prose_accepting_grammars():
-    with pytest.raises(ConfigurationError, match="invalid content parsing"):
-        build_parser(routes=(), fence_routes=None, code_languages=("bash",))
-
-
-def test_grammar_load_failure_explains_how_to_fix_it(monkeypatch):
-    def unavailable(*args: object, **kwargs: object) -> MixedContentParser:
-        raise OSError("network is unreachable")
-
-    monkeypatch.setattr(parsing, "MixedContentParser", unavailable)
-    with pytest.raises(ConfigurationError) as raised:
-        build_parser(routes=(), fence_routes=None, code_languages=("python", "go"))
-    message = str(raised.value)
-    assert "python, go" in message
-    assert "network is unreachable" in message
-    assert "t.download(['python', 'go'])" in message
-    assert "code_languages=()" in message
-    assert isinstance(raised.value.__cause__, OSError)

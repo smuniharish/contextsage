@@ -4,8 +4,8 @@ import json
 import re
 
 import pytest
-from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage
 
+from contextsage import JSONCompaction, Message
 from contextsage._pipeline import transformation
 from contextsage._pipeline.models import Kind, ParsedJSON, Preservation, Unit
 from contextsage._pipeline.signals import (
@@ -18,7 +18,7 @@ from contextsage._pipeline.transformation import (
     compact_json,
     plan,
 )
-from tests.support.builders import heartbeat_log, units
+from tests.support.builders import heartbeat_log, system, tool, units
 
 
 def log_unit(
@@ -67,9 +67,7 @@ def test_runs_shorter_than_the_marker_are_kept():
 
 
 def test_warnings_keep_distinct_numbers():
-    text = "".join(
-        f"WARN slow query took {index}00 ms on shard 7\n" for index in range(1, 6)
-    )
+    text = "".join(f"WARN slow query took {index}00 ms on shard 7\n" for index in range(1, 6))
     severities = tuple("WARNING" for _ in range(5))
     assert collapse_repeats(log_unit(text, severities)) == text
 
@@ -119,13 +117,13 @@ def expand(value: object) -> object:
 
 
 def test_maximum_preservation_only_minifies():
-    assert compact_json(DOCUMENT, "maximum_preservation") == json.dumps(
+    assert compact_json(DOCUMENT, JSONCompaction.MINIFY) == json.dumps(
         DOCUMENT, separators=(",", ":")
     )
 
 
 def test_balanced_collapses_adjacent_duplicates_losslessly():
-    compacted = json.loads(compact_json(DOCUMENT, "balanced"))
+    compacted = json.loads(compact_json(DOCUMENT, JSONCompaction.COLLAPSE_RUNS))
     assert compacted["items"] == [
         {"__repeated__": 3, "value": {"sku": "A-1"}},
         {"sku": "B-2"},
@@ -136,26 +134,26 @@ def test_balanced_collapses_adjacent_duplicates_losslessly():
 
 
 def test_collapsing_never_lengthens_the_document():
-    assert compact_json([0, 0, 1, 1, 1], "balanced") == "[0,0,1,1,1]"
-    assert compact_json([0, 1, 0], "maximum_compression") == "[0,1,0]"
-    assert compact_json(list(range(11)), "maximum_compression") == json.dumps(
+    assert compact_json([0, 0, 1, 1, 1], JSONCompaction.COLLAPSE_RUNS) == "[0,0,1,1,1]"
+    assert compact_json([0, 1, 0], JSONCompaction.SAMPLE) == "[0,1,0]"
+    assert compact_json(list(range(11)), JSONCompaction.SAMPLE) == json.dumps(
         list(range(11)), separators=(",", ":")
     )
 
 
 def test_maximum_compression_groups_and_samples():
-    compacted = json.loads(compact_json(DOCUMENT, "maximum_compression"))
+    compacted = json.loads(compact_json(DOCUMENT, JSONCompaction.SAMPLE))
     assert compacted["items"] == [
         {"__repeated__": 5, "value": {"sku": "A-1"}},
         {"sku": "B-2"},
     ]
     long_list = list(range(30))
-    sampled = json.loads(compact_json(long_list, "maximum_compression"))
+    sampled = json.loads(compact_json(long_list, JSONCompaction.SAMPLE))
     assert sampled == [0, 1, 2, 3, 4, {"__omitted__": 20}, 25, 26, 27, 28, 29]
 
 
 def test_non_ascii_text_is_kept_readable():
-    assert compact_json({"name": "Zoë"}, "balanced") == '{"name":"Zoë"}'
+    assert compact_json({"name": "Zoë"}, JSONCompaction.COLLAPSE_RUNS) == '{"name":"Zoë"}'
 
 
 def test_compact_json_unit_keeps_surrounding_whitespace():
@@ -172,17 +170,17 @@ def test_compact_json_unit_keeps_surrounding_whitespace():
         identifiers=(),
         document=ParsedJSON(document),
     )
-    compacted = compact(unit, policy="balanced", lossy=True)
+    compacted = compact(unit, mode=JSONCompaction.COLLAPSE_RUNS, lossy=True)
     assert compacted == '\n{"items":[{"__repeated__":20,"value":1}]}\n\n'
 
 
 def test_compact_json_without_a_document_is_skipped():
     unit = log_unit("{}", kind=Kind.JSON)
-    assert compact(unit, policy="balanced", lossy=True) is None
+    assert compact(unit, mode=JSONCompaction.COLLAPSE_RUNS, lossy=True) is None
 
 
 def test_compaction_that_does_not_shrink_is_discarded():
-    assert compact(log_unit("INFO a\n"), policy="balanced", lossy=True) is None
+    assert compact(log_unit("INFO a\n"), mode=JSONCompaction.COLLAPSE_RUNS, lossy=True) is None
 
 
 def test_compaction_failures_keep_the_unit(monkeypatch, caplog):
@@ -191,30 +189,26 @@ def test_compaction_failures_keep_the_unit(monkeypatch, caplog):
 
     monkeypatch.setattr(transformation, "collapse_repeats", broken)
     unit = log_unit(heartbeat_log(20))
-    assert compact(unit, policy="balanced", lossy=True) is None
+    assert compact(unit, mode=JSONCompaction.COLLAPSE_RUNS, lossy=True) is None
     assert "could not compact a log unit" in caplog.text
 
 
-def test_plan_selects_structured_units_in_text_messages():
+async def test_plan_selects_structured_units_in_text_messages():
     messages = [
-        SystemMessage("INFO a\nINFO b\nINFO c\n", id="s"),
-        ToolMessage(heartbeat_log(5), tool_call_id="c", id="t"),
-        HumanMessage([{"type": "text", "text": heartbeat_log(5)}], id="h"),
-        ToolMessage("plain prose", tool_call_id="d", id="p"),
-        ToolMessage('{"a": [1, 1, 1]}', tool_call_id="e", id="j"),
+        system("INFO a\nINFO b\nINFO c\n", id="s"),
+        tool(heartbeat_log(5), call="c", id="t"),
+        Message("user", heartbeat_log(5), id="h", rewritable=False),
+        tool("plain prose", call="d", id="p"),
+        tool('{"a": [1, 1, 1]}', call="e", id="j"),
     ]
-    decomposed = units(messages)
+    decomposed = await units(messages)
     levels = {unit.unit_id: Preservation.COMPRESSIBLE for unit in decomposed}
-    assert [
-        (unit.unit_id, lossy) for unit, lossy in plan(decomposed, levels, messages)
-    ] == [
+    assert [(unit.unit_id, lossy) for unit, lossy in plan(decomposed, levels, messages)] == [
         ("t:0", True),
         ("j:0", True),
     ]
     levels = {unit.unit_id: Preservation.MUST for unit in decomposed}
-    assert [
-        (unit.unit_id, lossy) for unit, lossy in plan(decomposed, levels, messages)
-    ] == [
+    assert [(unit.unit_id, lossy) for unit, lossy in plan(decomposed, levels, messages)] == [
         ("j:0", False),
     ]
 
@@ -232,10 +226,10 @@ def test_must_preserve_json_is_only_compacted_losslessly():
         identifiers=(),
         document=ParsedJSON(items),
     )
-    lossless = compact(unit, policy="maximum_compression", lossy=False)
+    lossless = compact(unit, mode=JSONCompaction.SAMPLE, lossy=False)
     assert lossless is not None
     assert expand(json.loads(lossless)) == items
-    lossy = compact(unit, policy="maximum_compression", lossy=True)
+    lossy = compact(unit, mode=JSONCompaction.SAMPLE, lossy=True)
     assert lossy == '[{"__repeated__":30,"value":{"sku":"A-1","qty":1}}]'
 
 

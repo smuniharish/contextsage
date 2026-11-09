@@ -1,81 +1,107 @@
-"""Chat models, histories and pipeline builders shared by the tests."""
+"""Messages, models and pipeline builders shared by the tests."""
 
 from __future__ import annotations
 
-import asyncio
 import json
-from itertools import cycle
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, override
 
-from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
+from parsefabric import LanguageModel
 
-from contextsage._pipeline.parsing import build_parser
+from contextsage import BalancedPolicy, ParsingOptions
+from contextsage._pipeline.decomposition import Decomposer
 from contextsage._pipeline.pipeline import Pipeline
 from contextsage._pipeline.signals import DEFAULT_IDENTIFIER_PATTERNS
+from contextsage.messages import Message, ToolCall
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Sequence
+    from collections.abc import Sequence
 
-    from langchain.agents.middleware.types import AgentState
-    from langchain_core.messages import BaseMessage
+    from parsefabric import ChatMessage
 
+    from contextsage import PreservationPolicy
     from contextsage._pipeline.models import Prepared, Unit
-    from contextsage._pipeline.preservation import Policy
+
+NO_CODE = ParsingOptions(code_detector=None)
+"""Parsing options that need no tree-sitter grammar."""
 
 
-def state(messages: Iterable[BaseMessage]) -> AgentState[Any]:
-    """Agent state holding ``messages``."""
-    return cast("AgentState[Any]", {"messages": list(messages)})
+def user(content: str, id: str | None = None) -> Message:
+    """A user message."""
+    return Message("user", content, id=id)
 
 
-def summary_model(text: str = "Summary of the earlier conversation.") -> BaseChatModel:
-    """A chat model that always answers with ``text``."""
-    return GenericFakeChatModel(messages=cycle([AIMessage(text)]))
-
-
-class FailingModel(BaseChatModel):
-    """A chat model whose every call fails like an unavailable provider."""
-
-    error: str = "provider unavailable"
-
-    @property
-    def _llm_type(self) -> str:
-        return "failing"
-
-    def _generate(self, *args: Any, **kwargs: Any) -> Any:
-        raise RuntimeError(self.error)
-
-    async def _agenerate(self, *args: Any, **kwargs: Any) -> Any:
-        raise RuntimeError(self.error)
-
-
-def profiled_model(max_input_tokens: int) -> BaseChatModel:
-    """A fake model whose LangChain profile reports ``max_input_tokens``."""
-    return GenericFakeChatModel(
-        messages=cycle([AIMessage("Profiled summary.")]),
-        profile={"max_input_tokens": max_input_tokens},
+def assistant(
+    content: str = "",
+    id: str | None = None,
+    *,
+    calls: Sequence[str] = (),
+    name: str | None = None,
+) -> Message:
+    """An assistant message, optionally requesting tool calls with the given IDs."""
+    return Message(
+        "assistant",
+        content,
+        id=id,
+        name=name,
+        tool_calls=tuple(ToolCall(call, "tool", {}) for call in calls),
     )
 
 
-def pipeline(policy: Policy = "balanced") -> Pipeline:
+def tool(content: str, call: str = "c1", id: str | None = None) -> Message:
+    """A tool result answering ``call``."""
+    return Message("tool", content, id=id, tool_call_id=call)
+
+
+def system(content: str = "You are a careful SRE assistant.", id: str | None = "s0") -> Message:
+    """A system message."""
+    return Message("system", content, id=id)
+
+
+class FakeModel(LanguageModel):
+    """A summary model that always answers with ``text`` and records each request."""
+
+    def __init__(self, text: str = "Summary of the earlier conversation.") -> None:
+        self.text = text
+        self.requests: list[Sequence[ChatMessage]] = []
+
+    @override
+    async def complete(self, messages: Sequence[ChatMessage]) -> str:
+        self.requests.append(messages)
+        return self.text
+
+
+class FailingModel(LanguageModel):
+    """A summary model whose every call fails like an unavailable provider."""
+
+    def __init__(self, error: BaseException | None = None) -> None:
+        self.error = error or RuntimeError("provider unavailable")
+
+    @override
+    async def complete(self, messages: Sequence[ChatMessage]) -> str:
+        raise self.error
+
+
+async def pipeline(policy: PreservationPolicy | None = None) -> Pipeline:
     """A pipeline without code detection, so no grammar is needed."""
-    return Pipeline(
-        parser=build_parser(routes=(), fence_routes=None, code_languages=()),
-        identifier_patterns=DEFAULT_IDENTIFIER_PATTERNS,
-        policy=policy,
+    decomposer = Decomposer(
+        await NO_CODE.build_parser(),
+        NO_CODE.build_engine(),
+        DEFAULT_IDENTIFIER_PATTERNS,
+        max_concurrency=NO_CODE.max_concurrency,
     )
+    return Pipeline(decomposer, policy or BalancedPolicy())
 
 
-def prepare(messages: Sequence[BaseMessage], policy: Policy = "balanced") -> Prepared:
-    """Run the pipeline synchronously."""
-    return asyncio.run(pipeline(policy).prepare(messages))
+async def prepare(
+    messages: Sequence[Message], policy: PreservationPolicy | None = None
+) -> Prepared:
+    """Analyze and compact ``messages``."""
+    return await (await pipeline(policy)).prepare(messages)
 
 
-def units(messages: Sequence[BaseMessage]) -> tuple[Unit, ...]:
+async def units(messages: Sequence[Message]) -> tuple[Unit, ...]:
     """Decompose messages with the default configuration."""
-    return prepare(messages).analysis.units
+    return (await prepare(messages)).analysis.units
 
 
 def heartbeat_log(lines: int, *, start_minute: int = 0) -> str:
@@ -96,19 +122,19 @@ def incident_report(lines: int = 200) -> str:
     )
 
 
-def incident_history(lines: int = 200) -> list[BaseMessage]:
+def incident_history(lines: int = 200) -> list[Message]:
     """A conversation with a large tool result and a user correction."""
     return [
-        HumanMessage("Investigate the payments outage for customer 123.", id="h1"),
-        AIMessage("", id="a1", tool_calls=[{"id": "c1", "name": "report", "args": {}}]),
-        ToolMessage(incident_report(lines), tool_call_id="c1", id="t1"),
-        AIMessage("Found INC-9931.", id="a2"),
-        HumanMessage("No, use customer 456 instead of customer 123.", id="h2"),
-        AIMessage("Switching to customer 456.", id="a3"),
-        HumanMessage("Any update?", id="h3"),
+        user("Investigate the payments outage for customer 123.", id="h1"),
+        assistant(id="a1", calls=("c1",)),
+        tool(incident_report(lines), call="c1", id="t1"),
+        assistant("Found INC-9931.", id="a2"),
+        user("No, use customer 456 instead of customer 123.", id="h2"),
+        assistant("Switching to customer 456.", id="a3"),
+        user("Any update?", id="h3"),
     ]
 
 
-def with_system(messages: Sequence[BaseMessage]) -> list[BaseMessage]:
+def with_system(messages: Sequence[Message]) -> list[Message]:
     """Prefix ``messages`` with a system prompt."""
-    return [SystemMessage("You are a careful SRE assistant.", id="s0"), *messages]
+    return [system(), *messages]

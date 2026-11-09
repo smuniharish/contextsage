@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
     from contextsage._pipeline.models import Unit
 
-INSTRUCTION_ROLES = frozenset({"human", "system"})
+INSTRUCTION_ROLES = frozenset({"user", "system"})
 
 CORRECTION = re.compile(
     r"\binstead\s+of\b"
@@ -76,9 +76,7 @@ def _repeated(units: Sequence[Unit]) -> set[str]:
             continue
         duplicates: dict[str, list[str]] = {}
         for unit in group:
-            duplicates.setdefault(normalize_volatile(unit.text), []).append(
-                unit.unit_id
-            )
+            duplicates.setdefault(normalize_volatile(unit.text), []).append(unit.unit_id)
         for unit_ids in duplicates.values():
             if len(unit_ids) >= _REPEAT_GROUP_MIN:
                 repeated.update(unit_ids[1:-1])
@@ -107,14 +105,10 @@ def score(units: Sequence[Unit]) -> dict[str, Importance]:
     last_message = max(unit.message_index for unit in units) or 1
     repeated = _repeated(units)
     reports_failure = {
-        unit.unit_id
-        for unit in units
-        if unit.kind != Kind.LOG and mentions_failure(unit.text)
+        unit.unit_id for unit in units if unit.kind != Kind.LOG and mentions_failure(unit.text)
     }
     failing_messages = {
-        unit.message_index
-        for unit in units
-        if unit.has_error or unit.unit_id in reports_failure
+        unit.message_index for unit in units if unit.has_error or unit.unit_id in reports_failure
     }
     scores: dict[str, Importance] = {}
     for unit in units:
@@ -124,7 +118,7 @@ def score(units: Sequence[Unit]) -> dict[str, Importance]:
         value = recency * _RECENCY_WEIGHT
         if recency > _RECENT:
             reasons.add("recent")
-        correction = unit.role == "human" and CORRECTION.search(text) is not None
+        correction = unit.role == "user" and CORRECTION.search(text) is not None
         if correction:
             value += _CORRECTION_WEIGHT
             reasons.add("user_correction")
@@ -140,7 +134,7 @@ def score(units: Sequence[Unit]) -> dict[str, Importance]:
         if unit.identifiers:
             value += _IDENTIFIER_WEIGHT
             reasons.add("contains_identifier")
-            if unit.role == "human":
+            if unit.role == "user":
                 reasons.add("user_identifier")
             failure_context = (
                 unit.has_error

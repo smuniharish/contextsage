@@ -6,13 +6,11 @@ import pytest
 
 from contextsage import ConfigurationError
 from contextsage._pipeline.budget import (
-    DEFAULT_MAXIMUM_CONTEXT_TOKENS,
     Budget,
     Trigger,
     resolve_keep,
-    resolve_maximum_context_tokens,
+    validate_maximum_context_tokens,
 )
-from tests.support.builders import profiled_model, summary_model
 
 
 def budget(**overrides: object) -> Budget:
@@ -26,18 +24,14 @@ def budget(**overrides: object) -> Budget:
     return Budget(**values)
 
 
-class TestResolveMaximumContextTokens:
-    def test_explicit_value_wins(self):
-        assert resolve_maximum_context_tokens(profiled_model(50_000), 8_000) == 8_000
+class TestValidateMaximumContextTokens:
+    def test_accepts_a_positive_integer(self):
+        assert validate_maximum_context_tokens(8_000) == 8_000
 
-    def test_reads_the_model_profile(self):
-        assert resolve_maximum_context_tokens(profiled_model(50_000), None) == 50_000
-
-    def test_falls_back_without_a_profile(self):
-        assert (
-            resolve_maximum_context_tokens(summary_model(), None)
-            == DEFAULT_MAXIMUM_CONTEXT_TOKENS
-        )
+    @pytest.mark.parametrize("value", [0, -5, True, 1.5, None])
+    def test_rejects_anything_else(self, value):
+        with pytest.raises(ConfigurationError, match="maximum_context_tokens"):
+            validate_maximum_context_tokens(value)
 
 
 class TestResolveKeep:
@@ -68,17 +62,6 @@ class TestResolveKeep:
     def test_malformed_values_are_rejected(self, keep):
         with pytest.raises(ConfigurationError, match="keep must be"):
             resolve_keep(keep, 10_000)
-
-    @pytest.mark.parametrize("value", [0, -5, True, 1.5])
-    def test_rejects_invalid_explicit_values(self, value):
-        with pytest.raises(ConfigurationError, match="maximum_context_tokens"):
-            resolve_maximum_context_tokens(summary_model(), value)
-
-    def test_ignores_an_invalid_profile_value(self):
-        assert (
-            resolve_maximum_context_tokens(profiled_model(0), None)
-            == DEFAULT_MAXIMUM_CONTEXT_TOKENS
-        )
 
 
 class TestBudget:

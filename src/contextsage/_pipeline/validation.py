@@ -5,16 +5,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from langchain_core.messages import AIMessage, ToolMessage
-
 from contextsage._pipeline.importance import normalize_apostrophes
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-    from langchain_core.messages import BaseMessage
-
-    from contextsage._pipeline.models import Fact
+    from contextsage.messages import Fact, Message
 
 SEPARATOR = "\0"
 """Joins canonical message texts so that no match spans two messages."""
@@ -64,21 +60,19 @@ def is_stated(fact: Fact, text: str) -> bool:
     return all(contains(text, canonical(required)) for required in fact.required)
 
 
-def orphaned_tool_results(messages: Sequence[BaseMessage]) -> tuple[str, ...]:
+def orphaned_tool_results(messages: Sequence[Message]) -> tuple[str, ...]:
     """Return the tool-call IDs of tool results with no preceding tool call."""
     requested: set[str] = set()
     orphans: list[str] = []
     for message in messages:
-        if isinstance(message, AIMessage):
-            requested.update(call["id"] for call in message.tool_calls if call["id"])
-        elif isinstance(message, ToolMessage) and message.tool_call_id not in requested:
-            orphans.append(message.tool_call_id)
+        if message.role == "assistant":
+            requested.update(call.id for call in message.tool_calls)
+        elif message.role == "tool" and message.tool_call_id not in requested:
+            orphans.append(message.tool_call_id or "")
     return tuple(orphans)
 
 
-def validate(
-    messages: Sequence[BaseMessage], facts: Sequence[Fact]
-) -> ValidationResult:
+def validate(messages: Sequence[Message], facts: Sequence[Fact]) -> ValidationResult:
     """Check that every fact appears and every tool result keeps its call.
 
     Facts are matched within each message, ignoring case, whitespace and
@@ -91,6 +85,6 @@ def validate(
     Returns:
         What is missing, if anything.
     """
-    text = SEPARATOR.join(canonical(message.text) for message in messages)
+    text = SEPARATOR.join(canonical(message.content) for message in messages)
     missing = tuple(fact for fact in facts if not is_stated(fact, text))
     return ValidationResult(missing, orphaned_tool_results(messages))

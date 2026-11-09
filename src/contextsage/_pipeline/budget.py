@@ -45,31 +45,15 @@ def resolve_keep(keep: object, maximum_context_tokens: int) -> Window:
             )
 
 
-def resolve_maximum_context_tokens(model: object, explicit: int | None) -> int:
-    """Return the context window to budget against.
-
-    Args:
-        model: The chat model; its LangChain model profile is consulted.
-        explicit: A caller-supplied value, which always wins.
-
-    Returns:
-        ``explicit``, else the profile's ``max_input_tokens``, else 128,000.
+def validate_maximum_context_tokens(value: object) -> int:
+    """Return ``value`` if it is a valid context window size.
 
     Raises:
-        ConfigurationError: If ``explicit`` is not a positive integer.
+        ConfigurationError: If ``value`` is not a positive integer.
     """
-    if explicit is not None:
-        if isinstance(explicit, bool) or not isinstance(explicit, int) or explicit <= 0:
-            raise ConfigurationError(
-                "maximum_context_tokens must be a positive integer"
-            )
-        return explicit
-    profile = getattr(model, "profile", None)
-    if isinstance(profile, Mapping):
-        value = profile.get("max_input_tokens")
-        if isinstance(value, int) and not isinstance(value, bool) and value > 0:
-            return value
-    return DEFAULT_MAXIMUM_CONTEXT_TOKENS
+    if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
+        raise ConfigurationError("maximum_context_tokens must be a positive integer")
+    return value
 
 
 @dataclass(frozen=True, slots=True)
@@ -96,17 +80,13 @@ class Budget:
             or not isinstance(self.reserved_output_tokens, int)
             or self.reserved_output_tokens < 0
         ):
-            raise ConfigurationError(
-                "reserved_output_tokens must be a non-negative integer"
-            )
+            raise ConfigurationError("reserved_output_tokens must be a non-negative integer")
         if (
             isinstance(self.summarization_overhead_tokens, bool)
             or not isinstance(self.summarization_overhead_tokens, int)
             or self.summarization_overhead_tokens < 0
         ):
-            raise ConfigurationError(
-                "summarization_overhead_tokens must be a non-negative integer"
-            )
+            raise ConfigurationError("summarization_overhead_tokens must be a non-negative integer")
         if (
             isinstance(self.safety_margin, bool)
             or not isinstance(self.safety_margin, (int, float))
@@ -152,9 +132,7 @@ def _threshold(kind: str, value: object) -> float:
             raise ConfigurationError("trigger 'fraction' must be in (0, 1]")
         return float(value)
     if not isinstance(value, int) or value <= 0:
-        raise ConfigurationError(
-            f"trigger {kind!r} threshold must be a positive integer"
-        )
+        raise ConfigurationError(f"trigger {kind!r} threshold must be a positive integer")
     return float(value)
 
 
@@ -167,9 +145,7 @@ def _clause(spec: object) -> Clause:
                 "a trigger tuple must be ('tokens' | 'messages' | 'fraction', value)"
             )
         case Mapping() if spec and all(key in _KINDS for key in spec):
-            return tuple(
-                (key, _threshold(key, spec[key])) for key in _KINDS if key in spec
-            )
+            return tuple((key, _threshold(key, spec[key])) for key in _KINDS if key in spec)
         case Mapping():
             raise ConfigurationError(
                 "a trigger clause must map 'tokens', 'messages' or 'fraction' to values"
@@ -181,10 +157,9 @@ def _clause(spec: object) -> Clause:
 class Trigger:
     """Decides whether the history needs summarizing.
 
-    Accepts LangChain's ``SummarizationMiddleware`` trigger forms: one
-    ``(kind, value)`` tuple, one clause mapping whose conditions must all hold,
-    or a list of either where any item may hold. ``None`` means "when the
-    history no longer fits the budget".
+    Accepts one ``(kind, value)`` tuple, one clause mapping whose conditions
+    must all hold, or a list of either where any item may hold. ``None`` means
+    "when the history no longer fits the budget".
 
     Args:
         spec: The trigger specification.

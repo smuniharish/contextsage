@@ -11,18 +11,14 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
 DEFAULT_IDENTIFIER_PATTERNS: tuple[re.Pattern[str], ...] = (
-    re.compile(
-        r"\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b"
-    ),
+    re.compile(r"\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b"),
     re.compile(r"\b[A-Z]{2,6}-\d{3,}\b"),
     re.compile(
         r"\b(?:req|request|trace|span|correlation|txn|transaction|order|session)"
         r"[_-]?id\s*[:=]\s*[\"']?[\w-]+",
         re.IGNORECASE,
     ),
-    re.compile(
-        r"\b(?:customer|order|account|invoice|ticket|incident)\s+#?\d+\b", re.IGNORECASE
-    ),
+    re.compile(r"\b(?:customer|order|account|invoice|ticket|incident)\s+#?\d+\b", re.IGNORECASE),
 )
 """Built-in identifier formats: UUIDs, ``ABC-123`` keys, ``request_id=...``
 assignments and phrases such as ``customer 456``."""
@@ -73,9 +69,7 @@ def find_identifiers(
         for match in pattern.finditer(text):
             found.setdefault(match.group(0), None)
             if not starts:
-                starts = list(
-                    accumulate(map(len, text.splitlines(keepends=True)), initial=0)
-                )
+                starts = list(accumulate(map(len, text.splitlines(keepends=True)), initial=0))
             first = bisect_right(starts, match.start()) - 1
             last = bisect_right(starts, max(match.end() - 1, match.start())) - 1
             lines.update(range(first, last + 1))

@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
+import asyncio
 import bisect
 from dataclasses import dataclass
 from itertools import pairwise
 from typing import TYPE_CHECKING
 
-from parsefabric import ParseContext, ParseEngine
+from parsefabric import ParseContext
 
-from contextsage._pipeline.lineage import is_summary
 from contextsage._pipeline.models import (
     SUMMARY_ROLE,
     WARNING_RANK,
@@ -25,8 +25,9 @@ if TYPE_CHECKING:
     import re
     from collections.abc import Mapping, Sequence
 
-    from langchain_core.messages import BaseMessage
-    from parsefabric import ParsedEvent, Parser
+    from parsefabric import Aggregate, ParsedEvent, ParseEngine, Parser
+
+    from contextsage.messages import Message
 
 _MIXED_CONTENT = "mixed-content"
 _PARSER_KINDS: Mapping[str, str] = {
@@ -116,9 +117,7 @@ def _classify(lines: Sequence[str], events: Sequence[ParsedEvent]) -> _Lines:
             continue
         first = min(evidence.line_number - 1, count - 1)
         end = evidence.end_offset
-        last = (
-            first if end is None else bisect.bisect_right(starts, max(end - 1, 0)) - 1
-        )
+        last = first if end is None else bisect.bisect_right(starts, max(end - 1, 0)) - 1
         last = min(max(last, first), count - 1)
         kind = _event_kind(event)
         severity = _event_severity(event)
@@ -192,10 +191,7 @@ def _segments(lines: Sequence[str], classified: _Lines) -> list[_Segment]:
             index += 1
             continue
         kind = classified.kinds[index]
-        elevated = (
-            kind == Kind.LOG
-            and severity_rank(classified.severities[index]) >= WARNING_RANK
-        )
+        elevated = kind == Kind.LOG and severity_rank(classified.severities[index]) >= WARNING_RANK
         previous = segments[-1] if segments else None
         if (
             previous is not None
@@ -215,34 +211,49 @@ class Decomposer:
     """Turns messages into `Unit` objects that tile each message's text.
 
     Every message is parsed independently with the configured parsefabric
-    parser. Consecutive lines of the same kind form one unit; each JSON
-    document and each fenced block is its own unit; blank lines join the unit
-    before them. A message that cannot be parsed becomes a single text unit.
+    parser, up to ``max_concurrency`` at a time. Consecutive lines of the same
+    kind form one unit; each JSON document and each fenced block is its own
+    unit; blank lines join the unit before them. A message that cannot be
+    parsed becomes a single text unit.
 
     Args:
         parser: The parsefabric parser for message text.
+        engine: The parsefabric engine that runs it and reports lifecycle
+            events.
         identifier_patterns: Patterns whose matches are must-keep identifiers.
+        max_concurrency: Messages parsed at the same time.
     """
 
     def __init__(
-        self, parser: Parser, identifier_patterns: Sequence[re.Pattern[str]]
+        self,
+        parser: Parser[Aggregate],
+        engine: ParseEngine,
+        identifier_patterns: Sequence[re.Pattern[str]],
+        *,
+        max_concurrency: int = 1,
     ) -> None:
         self._parser = parser
-        self._engine = ParseEngine()
+        self._engine = engine
         self._identifier_patterns = tuple(identifier_patterns)
+        self._max_concurrency = max_concurrency
 
-    async def decompose(self, messages: Sequence[BaseMessage]) -> tuple[Unit, ...]:
+    async def decompose(self, messages: Sequence[Message]) -> tuple[Unit, ...]:
         """Return the units of every message with non-blank text, in order."""
-        units: list[Unit] = []
-        for index, message in enumerate(messages):
-            text = message.text
-            if text.strip():
-                units.extend(await self._decompose_message(index, message, text))
-        return tuple(units)
+        indexed = [
+            (index, message) for index, message in enumerate(messages) if message.content.strip()
+        ]
+        limit = asyncio.Semaphore(self._max_concurrency)
 
-    async def _decompose_message(
-        self, index: int, message: BaseMessage, text: str
-    ) -> list[Unit]:
+        async def one(index: int, message: Message) -> list[Unit]:
+            async with limit:
+                return await self._decompose_message(index, message)
+
+        async with asyncio.TaskGroup() as group:
+            tasks = [group.create_task(one(index, message)) for index, message in indexed]
+        return tuple(unit for task in tasks for unit in task.result())
+
+    async def _decompose_message(self, index: int, message: Message) -> list[Unit]:
+        text = message.content
         lines = text.splitlines(keepends=True)
         result = await self._engine.parse(
             self._parser,
@@ -258,13 +269,11 @@ class Decomposer:
             segments = [_Segment(0, len(lines) - 1, Kind.TEXT)]
             severities = [None] * len(lines)
         key = message.id or f"message-{index}"
-        role = SUMMARY_ROLE if is_summary(message) else message.type
+        role = SUMMARY_ROLE if message.is_summary else message.role
         units: list[Unit] = []
         for position, segment in enumerate(segments):
             unit_text = "".join(lines[segment.first : segment.last + 1])
-            identifiers, identifier_lines = find_identifiers(
-                unit_text, self._identifier_patterns
-            )
+            identifiers, identifier_lines = find_identifiers(unit_text, self._identifier_patterns)
             units.append(
                 Unit(
                     unit_id=f"{key}:{position}",
