@@ -98,7 +98,5 @@ Edit Mermaid sources in `diagrams/`, render them with
 ## Release
 
 Maintainers update the project version in `pyproject.toml`, record the
-release in `CHANGELOG.md`, and publish a GitHub release tagged `vX.Y.Z`. The
-release workflow verifies that the tag matches the package version, builds
-the distributions, checks their metadata and publishes to PyPI with trusted
-publishing.
+release in `CHANGELOG.md`, and run the distribution checks above before
+publishing manually.

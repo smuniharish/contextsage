@@ -1,16 +1,21 @@
-# ContextSage
+<p align="center">
+  <img src="https://raw.githubusercontent.com/smuniharish/contextsage/master/docs/assets/logo.svg" alt="ContextSage logo" width="96">
+</p>
 
-[![PyPI](https://img.shields.io/pypi/v/contextsage)](https://pypi.org/project/contextsage/)
-[![Python](https://img.shields.io/pypi/pyversions/contextsage)](https://pypi.org/project/contextsage/)
-[![CI](https://github.com/smuniharish/contextsage/actions/workflows/ci.yml/badge.svg)](https://github.com/smuniharish/contextsage/actions/workflows/ci.yml)
-[![Documentation](https://img.shields.io/readthedocs/contextsage)](https://contextsage.readthedocs.io/)
-[![License](https://img.shields.io/pypi/l/contextsage)](https://github.com/smuniharish/contextsage/blob/master/LICENSE)
+<h1 align="center">ContextSage</h1>
+
+<p align="center">
+  <a href="https://pypi.org/project/contextsage/"><img src="https://img.shields.io/pypi/v/contextsage" alt="PyPI"></a>
+  <a href="https://pypi.org/project/contextsage/"><img src="https://img.shields.io/pypi/pyversions/contextsage" alt="Python versions"></a>
+  <a href="https://github.com/smuniharish/contextsage/actions/workflows/ci.yml"><img src="https://github.com/smuniharish/contextsage/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://contextsage.readthedocs.io/"><img src="https://img.shields.io/readthedocs/contextsage" alt="Documentation"></a>
+  <a href="https://github.com/smuniharish/contextsage/blob/master/LICENSE"><img src="https://img.shields.io/pypi/l/contextsage" alt="License"></a>
+</p>
 
 **Information-aware context summarization for AI agents.** ContextSage
 compresses long conversation histories while preserving important facts,
-tool relationships and provenance. The asynchronous core uses a framework-
-neutral message model; integrations connect it to frameworks such as
-LangChain, Agno and CrewAI.
+tool relationships and provenance. Its asynchronous, framework-agnostic core
+uses a neutral message model and can be adapted to any agent framework.
 
 ## Install
 

@@ -8,6 +8,7 @@ import io
 import json
 import re
 import struct
+import tomllib
 from typing import TYPE_CHECKING
 
 import pytest
@@ -105,6 +106,18 @@ def test_python_snippet_runs_and_prints_the_documented_output(
 
 def test_documentation_has_runnable_snippets():
     assert sum(snippet.run for snippet in SNIPPETS) >= 10
+
+
+def test_readme_and_documentation_use_the_project_logo():
+    theme = tomllib.loads((ROOT / "zensical.toml").read_text(encoding="utf-8"))["project"]["theme"]
+    assert theme["logo"] == theme["favicon"] == "assets/logo.svg"
+    assert (DOCS / theme["logo"]).is_file()
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    assert (
+        "https://raw.githubusercontent.com/smuniharish/contextsage/master/docs/assets/logo.svg"
+        in readme
+    )
+    assert 'alt="ContextSage logo"' in readme
 
 
 def test_readthedocs_uv_commands_use_its_virtual_environment():
