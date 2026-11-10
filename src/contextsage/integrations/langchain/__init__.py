@@ -64,6 +64,7 @@ if TYPE_CHECKING:
     from contextsage.parsing import ParsingOptions
 
 __all__ = [
+    "LINEAGE_KEY",
     "IntelligentSummarizationMiddleware",
     "LangChainAdapter",
     "LangChainSummaryModel",
@@ -89,10 +90,8 @@ class LangChainAdapter(FrameworkAdapter[BaseMessage]):
     """Converts LangChain messages to and from `contextsage.Message`.
 
     Summaries are ``HumanMessage`` objects marked with
-    ``additional_kwargs={"lc_source": "summarization"}``, as LangChain's own
-    ``SummarizationMiddleware`` writes them, with the lineage record under
-    ``additional_kwargs["contextsage"]``. A summary written by LangChain's
-    middleware is read as a first-generation summary. Messages whose content
+    ``additional_kwargs={"lc_source": "summarization"}``, with the lineage
+    record under ``additional_kwargs["contextsage"]``. Messages whose content
     is not plain text, such as image blocks, are never rewritten.
     """
 
@@ -105,8 +104,8 @@ class LangChainAdapter(FrameworkAdapter[BaseMessage]):
     def to_message(self, native: BaseMessage) -> Message:
         kwargs = native.additional_kwargs
         lineage = None
-        if LINEAGE_KEY in kwargs or kwargs.get("lc_source") == _SUMMARY_SOURCE:
-            lineage = SummaryLineage.from_dict(kwargs.get(LINEAGE_KEY), summary_id=native.id or "")
+        if LINEAGE_KEY in kwargs:
+            lineage = SummaryLineage.from_dict(kwargs[LINEAGE_KEY], summary_id=native.id or "")
         tool_calls: tuple[ToolCall, ...] = ()
         if isinstance(native, AIMessage):
             tool_calls = tuple(
@@ -407,6 +406,10 @@ class IntelligentSummarizationMiddleware(AgentMiddleware[AgentState[Any], Any, A
     ) -> tuple[ProvenanceLink, ...]:
         """Return the provenance of a summary; see `contextsage.ContextSummarizer.lineage`."""
         return await self._summarizer.lineage(summary_id, thread_id=thread_id)
+
+    async def adelete_lineage(self, *, thread_id: str | None = None) -> int:
+        """Delete a thread's provenance; see `contextsage.ContextSummarizer.delete_lineage`."""
+        return await self._summarizer.delete_lineage(thread_id=thread_id)
 
     async def aclose(self) -> None:
         """Release the summarizer's resources; see `contextsage.ContextSummarizer.aclose`.

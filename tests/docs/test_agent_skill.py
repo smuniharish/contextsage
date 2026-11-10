@@ -2,57 +2,81 @@
 
 from __future__ import annotations
 
+import json
 import re
+import tomllib
 
-from tests.support.paths import SKILLS
+from tests.support.paths import ROOT, SKILLS
 
-SKILL = SKILLS / "skills" / "contextsage"
+NAMES = ("contextsage", "contextsage-extend")
 _FRONTMATTER = re.compile(r"\A---\n(?P<header>.*?)\n---\n(?P<body>.*)\Z", re.DOTALL)
 _NAME = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 
 
-def frontmatter() -> tuple[dict[str, str], str]:
-    text = (SKILL / "SKILL.md").read_text(encoding="utf-8").replace("\r\n", "\n")
-    match = _FRONTMATTER.match(text)
-    assert match, "SKILL.md must start with YAML frontmatter"
-    fields = dict(line.split(": ", 1) for line in match["header"].splitlines() if line.strip())
+def _frontmatter(name: str) -> tuple[dict[str, str], str]:
+    path = SKILLS / "skills" / name / "SKILL.md"
+    match = _FRONTMATTER.match(path.read_text(encoding="utf-8").replace("\r\n", "\n"))
+    assert match, f"{path} must start with YAML frontmatter"
+
+    fields: dict[str, str] = {}
+    description: list[str] = []
+    current: str | None = None
+    for line in match["header"].splitlines():
+        if line.startswith("  ") and current == "description":
+            description.append(line.strip())
+        elif line.startswith("  version:") and current == "metadata":
+            fields["metadata.version"] = line.partition(":")[2].strip().strip('"')
+        elif line and not line.startswith(" "):
+            key, separator, value = line.partition(":")
+            assert separator
+            current = key
+            fields[key] = value.strip()
+    fields["description"] = " ".join(description)
     return fields, match["body"]
 
 
-def test_distribution_contains_exactly_one_skill():
+def test_distribution_contains_both_skills_and_manifest():
     skills = sorted(path.name for path in (SKILLS / "skills").iterdir())
-    assert skills == ["contextsage"]
+    assert skills == sorted(NAMES)
+    manifest = json.loads((ROOT / "skills.sh.json").read_text(encoding="utf-8"))
+    assert manifest["paths"] == ["./contextsage-skills/skills"]
     assert (SKILLS / "README.md").is_file()
     assert (SKILLS / "validation" / "README.md").is_file()
 
 
-def test_frontmatter_has_only_the_required_fields():
-    fields, _ = frontmatter()
-    assert list(fields) == ["name", "description"]
+def test_skill_frontmatter_matches_the_package_version():
+    with (ROOT / "pyproject.toml").open("rb") as project_file:
+        version = tomllib.load(project_file)["project"]["version"]
+    for name in NAMES:
+        fields, _ = _frontmatter(name)
+        assert fields["name"] == name
+        assert 1 <= len(name) <= 64
+        assert _NAME.fullmatch(name)
+        assert fields["description"].startswith("Use this skill when")
+        assert 1 <= len(fields["description"]) <= 1024
+        assert fields["license"] == "Apache-2.0"
+        assert fields["metadata.version"] == version
 
 
-def test_name_matches_the_directory_and_the_specification():
-    name = frontmatter()[0]["name"]
-    assert name == SKILL.name
-    assert 1 <= len(name) <= 64
-    assert _NAME.fullmatch(name)
-
-
-def test_description_says_what_the_skill_does_and_when_to_use_it():
-    description = frontmatter()[0]["description"]
-    assert 1 <= len(description) <= 1024
-    assert "contextsage" in description
-    assert "Use when" in description
-
-
-def test_body_stays_within_the_recommended_size():
-    body = frontmatter()[1]
-    assert len(body.splitlines()) < 500
-    for section in (
-        "## Activate when",
-        "## Required workflow",
-        "## Integration rules",
-        "## Prohibited shortcuts",
-        "## Verification checklist",
-    ):
-        assert section in body
+def test_skills_have_workflows_and_verification_guidance():
+    required_sections = {
+        "contextsage": (
+            "## Activate when",
+            "## Workflow",
+            "## Configuration guide",
+            "## Rules",
+            "## Verify",
+        ),
+        "contextsage-extend": (
+            "## Choose the boundary",
+            "## Workflow",
+            "## Adapter invariants",
+            "## Dependency-component invariants",
+            "## Verification",
+        ),
+    }
+    for name, sections in required_sections.items():
+        _, body = _frontmatter(name)
+        assert len(body.splitlines()) < 500
+        for section in sections:
+            assert section in body

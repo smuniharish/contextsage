@@ -1,51 +1,19 @@
 # Quickstart
 
-## Add ContextSage to an agent
+ContextSage accepts framework-neutral `Message` objects and an asynchronous
+`parsefabric.LanguageModel`. The history below uses a scripted model so it
+runs offline and prints stable output.
 
-`IntelligentSummarizationMiddleware` is agent middleware. Add it to
-`create_agent` wherever you would use LangChain's `SummarizationMiddleware`:
+## Run the example
 
-```python
-from langchain.agents import create_agent
-from langchain_core.tools import tool
+From the repository root:
 
-from contextsage import IntelligentSummarizationMiddleware
-
-
-@tool
-def order_status(order_id: str) -> str:
-    """Return the status of an order."""
-    return f"{order_id}: shipped"
-
-
-agent = create_agent(
-    model="openai:gpt-5",
-    tools=[order_status],
-    middleware=[
-        IntelligentSummarizationMiddleware(
-            model="openai:gpt-5-mini",
-            trigger=("tokens", 100_000),
-            keep=("messages", 20),
-        )
-    ],
-)
+```powershell
+uv sync --locked --all-extras --all-groups
+uv run python examples\quickstart.py
 ```
 
-- `model` writes the summaries. It can differ from the agent's model.
-- `trigger` decides when to summarize: here, once the history reaches 100,000
-  tokens. Leave it out to summarize only when the history no longer fits the
-  model's context window.
-- `keep` is how much recent history stays verbatim: here, the last 20
-  messages. Older messages are replaced by the summary.
-
-Everything else has production defaults; see
-[Configuration](../guide/configuration.md).
-
-## Watch it work
-
-The quickstart example runs an agent on a history whose large incident report
-pushes it past the trigger. It uses scripted models, so it runs offline and
-always prints the same output:
+The script is also included below:
 
 ```python
 --8<--
@@ -53,33 +21,35 @@ examples/quickstart.py
 --8<--
 ```
 
-Output:
+Expected output:
 
 ```text
 --8<-- "examples/expected/quickstart.txt"
 ```
 
-Before the agent's model call, ContextSage:
+## Connect your framework
 
-1. **Checked the trigger.** The history held 3,283 tokens, over the 2,000-token
-   trigger.
-2. **Analyzed the history.** It parsed each message into content units and
-   found two facts that must survive: the incident `INC-9931` and the
-   transaction `TX-991`.
-3. **Compacted the report.** 200 routine log lines collapsed into a marker
-   naming the omitted lines, and 40 identical JSON records into one counted
-   entry, bringing the history down to 166 tokens.
-4. **Had LangChain summarize** the messages older than the last two.
-5. **Validated the result.** Both facts are in the summary, so validation
-   passed and nothing had to be restated.
+Before each model call, convert the framework history to
+`contextsage.Message`, then apply a result only when the engine returns one:
 
-The `SummarizationEvent` passed to `observability_hook` records each of these
-numbers, without any message content.
+```python
+async def update_history(summarizer, messages, thread_id):
+    result = await summarizer.summarize(messages, thread_id=thread_id)
+    if result is not None:
+        messages = list(result.messages)
+    return messages
+```
 
-## Next steps
+The trigger defaults to the configured token budget. Set
+`trigger=("tokens", n)` or `trigger=("messages", n)` to choose another
+threshold. `keep=("messages", n)` retains the most recent messages outside
+the summary window. See [configuration](../guide/configuration.md) and the
+[custom framework adapter](../guide/integrations.md#custom-frameworks).
 
-- [How it works](../guide/how-it-works.md) explains each step in detail.
-- [Examples](../examples.md) shows compaction, preservation, recovery,
-  provenance and observability, offline and with a live model.
-- [Agent Skills](../agent-skills.md) teach coding agents to integrate
-  ContextSage correctly.
+## Use LangChain
+
+Install `contextsage[langchain]` and add
+`IntelligentSummarizationMiddleware` from
+`contextsage.integrations.langchain` to a LangChain agent. The integration
+adapts native messages, model calls and token counting to the same core
+engine. See the [LangChain guide](../guide/integrations.md#langchain).

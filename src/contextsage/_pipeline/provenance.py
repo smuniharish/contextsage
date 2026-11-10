@@ -105,3 +105,7 @@ class ProvenanceRecorder:
         return tuple(
             await self.store.lineage(summary_id, context=self.context(thread_id, graph_id))
         )
+
+    async def delete(self, thread_id: str | None) -> int:
+        """Delete every link recorded for a thread and return how many records were removed."""
+        return await self.store.delete_run(self.context(thread_id))

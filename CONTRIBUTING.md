@@ -1,134 +1,104 @@
 # Contributing
 
 Thank you for helping improve ContextSage. Bug reports, documentation fixes,
-new content recognition and performance work are all welcome. Please follow
-the
-[code of conduct](https://github.com/smuniharish/contextsage/blob/master/CODE_OF_CONDUCT.md)
-in all project spaces.
+content recognition and performance work are welcome. Follow the
+[code of conduct](CODE_OF_CONDUCT.md) in all project spaces.
 
-## Report a bug or request a feature
+## Report an issue
 
 Open an [issue](https://github.com/smuniharish/contextsage/issues/new/choose)
-using the bug report or feature request template. For a bug, include the
-ContextSage, LangChain and Python versions, a minimal script that reproduces
-the problem (ideally with a scripted chat model rather than a real provider),
-and the result you expected. Never paste API keys or private conversation
-content. Report security vulnerabilities privately as described in the
-[security policy](https://github.com/smuniharish/contextsage/blob/master/SECURITY.md).
+with a minimal reproduction and the expected behavior. For runtime issues,
+include the ContextSage, Python and relevant integration versions. Prefer a
+scripted model over a real provider call. Do not include API keys or private
+conversation content. Report security issues through the
+[security policy](SECURITY.md).
 
-## Set up a development environment
+## Set up the project
 
 You need Python 3.12 or newer and [uv](https://docs.astral.sh/uv/).
 
-```bash
+```powershell
 git clone https://github.com/smuniharish/contextsage.git
 cd contextsage
-uv sync
+uv sync --locked --all-extras --all-groups
 ```
 
-`uv sync` creates a virtual environment with the package in editable mode and
-every development dependency group: tests, linting, type checking,
-documentation and the dependencies of the examples. Optionally, run
-`uvx pre-commit install` to lint and type-check every commit.
+This installs the core, optional integrations, tests, tooling and example
+dependencies. To run the pre-commit hooks locally, use `uvx pre-commit
+install`.
 
-## Run the checks
+## Run checks
 
-Every pull request must pass the same checks as continuous integration:
-
-```bash
+```powershell
 uv run ruff check .
 uv run ruff format --check .
-uv run pyrefly check
-uv run coverage run -m pytest
-uv run coverage report
-uv run python examples/verify_examples.py
-uv run python benchmarks/bench_middleware.py --smoke
-uv run mkdocs build --strict
+uv run pyrefly check --min-severity warn
+uv run pytest --cov=contextsage --cov-branch --cov-report=term-missing:skip-covered
+uv run pytest tests\examples tests\docs\test_examples.py `
+  -m "examples or not examples" --no-cov
+uv run python examples\verify_examples.py
+uv run python benchmarks\bench_middleware.py --smoke
+uv run python scripts\generate_api_reference.py --check
+uv run --only-group docs zensical build --strict
 uv build
+uvx twine check --strict dist/*
 ```
 
-| Check | What it enforces |
-| --- | --- |
-| `ruff check`, `ruff format` | Linting, Google-style docstrings and formatting |
-| `pyrefly check` | Static types across the package, tests, examples and benchmarks |
-| `coverage` with `pytest` | Every test passes, with 100% line and branch coverage of the package |
-| `verify_examples.py` | Every offline example prints exactly its recorded output |
-| `bench_middleware.py --smoke` | Every benchmark case runs |
-| `mkdocs build --strict` | The documentation builds without warnings or broken links |
-| `uv build` | The source distribution and wheel build |
+The project requires 100% line and branch coverage. The standard pytest
+configuration excludes `live` and `examples` tests; the second test command
+runs the offline examples. Live model calls require explicit provider
+configuration.
 
-## Tests
+## Project conventions
 
-Tests live in `tests/`: `unit` for each stage, `property` for
-[Hypothesis](https://hypothesis.readthedocs.io/) property-based tests,
-`integration` for agents, `failure` for injected failures, `docs` for the
-documentation, examples and Agent Skill, and `live` for tests against a real
-model. See the
-[testing guide](https://contextsage.readthedocs.io/en/latest/development/testing/)
-for profiles, markers and live tests.
-
-Add a test with every behavior change. Coverage must stay at 100%; when code
-cannot be reached by a test, remove it rather than excluding it.
-
-## Documentation
-
-The documentation in `docs/` is built with
-[MkDocs Material](https://squidfunk.github.io/mkdocs-material/) and
-[mkdocstrings](https://mkdocstrings.github.io/). Preview it with:
-
-```bash
-uv run mkdocs serve
-```
-
-- **API reference.** Generated from docstrings; document every public class,
-  function and argument in Google style.
-- **Code snippets.** The test suite runs every Python snippet in the
-  documentation and the README, and compares its output with the `text` block
-  that follows an `Output:` line. Put `<!-- docs-test: skip -->` on the line
-  before a fragment that cannot run on its own; it is still compiled.
-- **Examples.** Pages embed the scripts in `examples/` and their recorded
-  output from `examples/expected/`. After an intended change, run
-  `uv run python examples/verify_examples.py --update` and review the diff.
-- **Diagrams.** Edit the Mermaid sources in `diagrams/`, then render them with
-  `node scripts/render_diagrams.mjs` (Node.js 22.13 or newer; set
-  `PUPPETEER_EXECUTABLE_PATH` to an installed Chrome, Chromium or Edge) and
-  commit the PNG files together with `docs/assets/diagrams/manifest.json`. A
-  test fails when a source changes without a new render.
-
-## Coding guidelines
-
-- Build on LangChain, LangGraph, parsefabric and langgraph-xai rather than
-  reimplementing what they provide.
-- Keep the public API small. Public names are listed in each module's
-  `__all__`; everything in underscore-prefixed modules is internal.
-- Type every function, and keep `pyrefly check` free of errors.
-- Patterns run on untrusted text: keep regular expressions linear-time.
-- Never put message content in events or log records.
-- Update the documentation, the Agent Skill and the changelog together with
+- Keep the core asynchronous and framework-neutral. Put framework-specific
+  behavior in an optional integration.
+- Use abstract base classes for extension points.
+- Keep public API names in module `__all__` and document them in the
+  generated reference.
+- Add tests for behavior changes and maintain complete package coverage.
+- Keep events and logs free of conversation content and credentials.
+- Update examples, documentation, Agent Skills and the changelog with
   behavior changes.
 
-## Submit a pull request
+## Tests and documentation
 
-1. Create a branch from `master` and keep the change focused.
-2. Add or update tests, documentation and examples.
-3. Add an entry under **Unreleased** in
-   [`CHANGELOG.md`](https://github.com/smuniharish/contextsage/blob/master/CHANGELOG.md).
-4. Run the checks above, then open the pull request and fill in its template.
+Tests live under `tests/`: `unit`, `property`, `integration`, `examples`,
+`docs` and optional `live` tests. See the
+[testing guide](https://contextsage.readthedocs.io/en/latest/development/testing/).
 
-## Versioning
+Documentation in `docs/` is built with Zensical. Preview it with:
 
-ContextSage follows [Semantic Versioning](https://semver.org/). The public API
-is everything documented in the
-[API reference](https://contextsage.readthedocs.io/en/latest/reference/).
-Each release supports the versions of its dependencies declared in
-`pyproject.toml`; there are no compatibility layers for earlier releases.
+```powershell
+uv run --only-group docs zensical serve
+```
 
-## Release a version
+The [API reference](https://contextsage.readthedocs.io/en/latest/reference/)
+is generated from the source docstrings. After changing a public signature or
+docstring, regenerate it and commit the result:
 
-Maintainers release from `master`:
+```powershell
+uv run python scripts\generate_api_reference.py
+```
 
-1. Set `__version__` in `src/contextsage/__init__.py`.
-2. Move the **Unreleased** changelog entries under the new version and date.
-3. Tag the commit as `vX.Y.Z` and push the tag. The release workflow builds
-   the distributions, checks that the tag matches the package version, and
-   publishes to PyPI with trusted publishing.
+The documentation test suite compiles code snippets, runs snippets with
+documented output, validates local links and checks the skill distribution.
+Examples are embedded from `examples/` and their recorded output fixtures.
+Edit Mermaid sources in `diagrams/`, render them with
+`node scripts/render_diagrams.mjs`, and commit their PNGs and manifest.
+
+## Pull requests
+
+1. Branch from `master` and keep the change focused.
+2. Update relevant tests, examples, documentation and the unreleased
+   [changelog](CHANGELOG.md) entry.
+3. Run the applicable checks above and describe the results in the pull
+   request.
+
+## Release
+
+Maintainers update the project version in `pyproject.toml`, record the
+release in `CHANGELOG.md`, and publish a GitHub release tagged `vX.Y.Z`. The
+release workflow verifies that the tag matches the package version, builds
+the distributions, checks their metadata and publishes to PyPI with trusted
+publishing.

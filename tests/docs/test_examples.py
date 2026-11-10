@@ -7,13 +7,15 @@ from pathlib import Path
 import verify_examples
 
 EXAMPLES = Path(verify_examples.__file__).parent
-HELPERS = {"_models", "verify_examples"}
+HELPERS = {"_shared", "_langchain_shared", "verify_examples"}
 ALL = (*verify_examples.OFFLINE, *verify_examples.LIVE)
+SERVICE_BACKED = {"postgres_store", "otel_export"}
+EVERY_EXAMPLE = (*ALL, *sorted(SERVICE_BACKED))
 
 
 def test_every_example_is_either_verified_or_live():
     scripts = {path.stem for path in EXAMPLES.glob("*.py")} - HELPERS
-    assert scripts == set(ALL)
+    assert scripts == set(ALL) | SERVICE_BACKED
     assert len(ALL) == len(set(ALL))
 
 
@@ -24,5 +26,5 @@ def test_every_offline_example_has_recorded_output():
 
 def test_the_readme_links_every_example():
     readme = (EXAMPLES / "README.md").read_text(encoding="utf-8")
-    for name in ALL:
+    for name in EVERY_EXAMPLE:
         assert f"[`{name}.py`]({name}.py)" in readme

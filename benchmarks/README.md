@@ -1,15 +1,15 @@
 # Benchmarks
 
 `bench_middleware.py` measures the latency ContextSage adds before a model
-call. Each case runs `IntelligentSummarizationMiddleware.before_model` on a
-synthetic history with a scripted summary model, so the timings cover parsing,
-analysis, compaction, LangChain's summarization step and validation, without
-network latency.
+call. Each case runs the async, framework-neutral `ContextSummarizer` on a
+synthetic history with a scripted parsefabric model, so timings cover parsing,
+analysis, compaction, summary generation, and validation without network
+latency.
 
-```bash
-uv run python benchmarks/bench_middleware.py            # full run
-uv run python benchmarks/bench_middleware.py --smoke    # quick run, as in CI
-uv run python benchmarks/bench_middleware.py --repeat 9 # more timed runs
+```powershell
+uv run python benchmarks\bench_middleware.py
+uv run python benchmarks\bench_middleware.py --smoke
+uv run python benchmarks\bench_middleware.py --repeat 9
 ```
 
 | Case | History |
@@ -17,11 +17,10 @@ uv run python benchmarks/bench_middleware.py --repeat 9 # more timed runs
 | tool log | One tool result of routine log lines that ends in an error |
 | JSON records | One tool result holding a JSON array of order records |
 | conversation | Many short turns, each reporting `key=value` facts |
-| conversation, no code detection | The same, with `code_languages=()` |
+| conversation, no code detection | The same, with `ParsingOptions(code_detector=None)` |
 
 Every case reports the median of several timed runs after a warm-up run. Each
-timed run uses a new middleware, so it analyzes the history as if for the first
-time, and garbage collection is paused while a run is timed, as `timeit` does.
-Results depend on the machine; the
+timed run uses a new summarizer, so it analyzes the history as if for the first
+time. Results depend on the machine; the
 [performance guide](https://contextsage.readthedocs.io/en/latest/operations/performance/)
 lists reference numbers and tuning advice.

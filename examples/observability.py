@@ -1,21 +1,40 @@
-"""Observe every summarization through logging and a hook.
+"""Observe every summarization through logging, OpenTelemetry and your own sink.
 
 Run: python examples/observability.py
 
-Each summarization emits one content-free ``SummarizationEvent``. It is logged
-to the ``contextsage`` logger at INFO level, with the event under the
-``contextsage`` key of the log record, and passed to ``observability_hook``.
-Neither ever contains message content.
+Each rewrite emits one content-free `SummarizationEvent` to the summarizer's
+`EventSink`. Here a `CompositeEventSink` delivers it to three sinks:
+
+- `LoggingEventSink` logs it to the ``contextsage`` logger at INFO level, with
+  the event under the ``contextsage`` attribute of the log record.
+- `OpenTelemetryEventSink` records it as OpenTelemetry metrics; an in-memory
+  reader stands in for an exporter (see ``otel_export.py`` for OTLP).
+- ``AlertSink``, a custom `EventSink`, flags rewrites that had to restate facts.
+
+No sink ever receives message content.
 """
 
+from __future__ import annotations
+
+import asyncio
 import json
 import logging
+from typing import override
 
-from langchain_core.messages import AIMessage, AnyMessage, HumanMessage, ToolMessage
-from langgraph.runtime import Runtime
+from _shared import ScriptedModel
+from opentelemetry.sdk.metrics import MeterProvider
+from opentelemetry.sdk.metrics.export import InMemoryMetricReader
 
-from _models import scripted_model
-from contextsage import IntelligentSummarizationMiddleware, SummarizationEvent
+from contextsage import (
+    CompositeEventSink,
+    ContextSummarizer,
+    EventSink,
+    LoggingEventSink,
+    Message,
+    OpenTelemetryEventSink,
+    SummarizationEvent,
+    ToolCall,
+)
 
 VOLATILE = {"summary_id", "latency_ms"}
 
@@ -23,6 +42,7 @@ VOLATILE = {"summary_id", "latency_ms"}
 class JSONEventHandler(logging.Handler):
     """Print the structured event attached to ContextSage log records."""
 
+    @override
     def emit(self, record: logging.LogRecord) -> None:
         event = {
             key: value
@@ -33,36 +53,71 @@ class JSONEventHandler(logging.Handler):
         print(json.dumps(event, indent=2))
 
 
-logger = logging.getLogger("contextsage")
-logger.setLevel(logging.INFO)
-logger.addHandler(JSONEventHandler())
+class AlertSink(EventSink):
+    """Flag rewrites that needed facts restated."""
+
+    @override
+    async def emit(self, event: SummarizationEvent) -> None:
+        if event.recovery_status != "none_needed":
+            print(f"alert: recovery '{event.recovery_status}' after {event.trigger_reason}")
 
 
-def alert_on_lost_facts(event: SummarizationEvent) -> None:
-    """A hook: flag summaries that needed facts restated."""
-    if event.recovery_status != "none_needed":
-        print(f"hook: recovery '{event.recovery_status}' after {event.trigger_reason}")
-
-
-middleware = IntelligentSummarizationMiddleware(
-    model=scripted_model("Discussed the invoice."),
-    trigger=("messages", 6),
-    keep=("messages", 2),
-    observability_hook=alert_on_lost_facts,
-)
-billing_log = "".join(
+BILLING_LOG = "".join(
     f"2026-10-04T07:{index // 60:02d}:{index % 60:02d}Z INFO billing-worker charge ok\n"
     for index in range(120)
 )
-history: list[AnyMessage] = [
-    HumanMessage("Invoice INV-2048 for customer 77 was charged twice."),
-    AIMessage("", tool_calls=[{"id": "c1", "name": "billing_log", "args": {}}]),
-    ToolMessage(
-        billing_log + "2026-10-04T09:00:00Z ERROR duplicate charge for INV-2048\n",
+HISTORY = [
+    Message("user", "Invoice INV-2048 for customer 77 was charged twice."),
+    Message("assistant", "", tool_calls=(ToolCall("c1", "billing_log", {}),)),
+    Message(
+        "tool",
+        BILLING_LOG + "2026-10-04T09:00:00Z ERROR duplicate charge for INV-2048\n",
         tool_call_id="c1",
     ),
-    AIMessage("The billing log shows a duplicate charge for INV-2048."),
-    HumanMessage("Refund the duplicate."),
-    AIMessage("Refund issued."),
+    Message("assistant", "The billing log shows a duplicate charge for INV-2048."),
+    Message("user", "Refund the duplicate."),
+    Message("assistant", "Refund issued."),
 ]
-middleware.before_model({"messages": history}, Runtime())
+
+
+async def main() -> None:
+    logger = logging.getLogger("contextsage.example")
+    logger.setLevel(logging.INFO)
+    logger.propagate = False
+    logger.addHandler(JSONEventHandler())
+    reader = InMemoryMetricReader()
+    meter = MeterProvider(metric_readers=[reader]).get_meter("contextsage")
+    sink = CompositeEventSink(
+        [LoggingEventSink(logger), OpenTelemetryEventSink(meter), AlertSink()]
+    )
+
+    async with ContextSummarizer(
+        ScriptedModel("Discussed the invoice."),
+        trigger=("messages", 6),
+        keep=("messages", 2),
+        sink=sink,
+    ) as summarizer:
+        await summarizer.summarize(HISTORY)
+
+    print()
+    print("OpenTelemetry metrics:")
+    data = reader.get_metrics_data()
+    if data is None:
+        raise SystemExit("No metrics were recorded.")
+    attributes: dict[str, object] = {}
+    for resource_metrics in data.resource_metrics:
+        for scope_metrics in resource_metrics.scope_metrics:
+            for metric in scope_metrics.metrics:
+                if metric.name == "contextsage.duration":
+                    continue
+                point = next(iter(metric.data.data_points))
+                attributes = dict(point.attributes or {})
+                value = getattr(point, "value", None)
+                if value is None:
+                    value = f"sum={getattr(point, 'sum', 0)}"
+                print(f"  {metric.name}: {value}")
+    print(f"  attributes: {attributes}")
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

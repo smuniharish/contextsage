@@ -355,6 +355,22 @@ class ContextSummarizer:
         """
         return await self._provenance.lineage(summary_id, thread_id)
 
+    async def delete_lineage(self, *, thread_id: str | None = None) -> int:
+        """Delete the provenance recorded for a conversation thread.
+
+        Use it when a conversation is erased, for example to honor a
+        retention policy or a deletion request. Only links ContextSage
+        recorded for the thread are removed; agxai run records of the agent
+        itself are kept.
+
+        Args:
+            thread_id: The thread passed to `summarize`.
+
+        Returns:
+            The number of records the ``ProvenanceStore`` removed.
+        """
+        return await self._provenance.delete(thread_id)
+
     async def aclose(self) -> None:
         """Flush the sink and release what the summarizer created.
 

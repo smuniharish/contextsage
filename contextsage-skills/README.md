@@ -1,44 +1,44 @@
-# contextsage Agent Skills
+# ContextSage Agent Skills
 
-This directory is the canonical Agent Skills distribution for `contextsage`.
-It contains procedural guidance for coding agents that integrate, configure,
-test or debug the existing `contextsage` package.
+This directory distributes two skills for the ContextSage Python package.
+Skills give coding agents procedural guidance; they do not add runtime
+behavior.
 
-It is not a Python package and does not add runtime behavior.
+| Skill | Use |
+| --- | --- |
+| [`contextsage`](skills/contextsage/SKILL.md) | Integrate, configure, test and debug ContextSage in an agent |
+| [`contextsage-extend`](skills/contextsage-extend/SKILL.md) | Implement a framework adapter or customize ContextSage and downstream ABCs |
 
-| Component | Location | Purpose |
-| --- | --- | --- |
-| contextsage library | [`src/contextsage/`](../src/contextsage/) | The published Python package and its public API |
-| contextsage Agent Skill | [`skills/contextsage/`](skills/contextsage/) | Canonical guidance for integrating and operating the library |
-| Skill validation | [`validation/`](validation/) | Validation procedure and agent-task matrix |
+Both use the [Agent Skills specification](https://agentskills.io/specification)
+and are discoverable from the repository's `skills.sh.json`.
 
-## Agent Skills format
+## Install
 
-The skill follows the
-[Agent Skills specification](https://agentskills.io/specification): a
-directory with a `SKILL.md` file whose YAML frontmatter holds the required
-`name` and `description`. The `name`, `contextsage`, matches the directory
-name, and only the required frontmatter fields are used, for portability.
+Install both skills with the [skills CLI](https://www.skills.sh/docs/cli):
 
-Compatible agents load [`skills/contextsage/SKILL.md`](skills/contextsage/SKILL.md)
-when a task involves summarizing a LangChain agent's history with ContextSage.
-The skill links to the authoritative documentation and examples instead of
-keeping a second copy of them.
+```bash
+npx skills add smuniharish/contextsage
+```
 
-There are no host-specific copies of the skill; every compatible host reads
-the same `SKILL.md`. Installation instructions for Claude Code, Codex, Cursor,
-GitHub Copilot and other hosts are in the
-[Agent Skills guide](https://contextsage.readthedocs.io/en/latest/agent-skills/).
+Install one skill at a time:
 
-## Maintaining the distribution
+```bash
+npx skills add smuniharish/contextsage --skill contextsage
+npx skills add smuniharish/contextsage --skill contextsage-extend
+```
 
-When the public API, the supported workflows or documented behavior change:
+To install manually, copy the selected skill directory, including
+`SKILL.md`, into the skills location used by your agent.
 
-1. Update the skill, limited to the verified change.
-2. Link to the corresponding documentation, examples or tests instead of
-   duplicating them.
-3. Run the process in [`validation/README.md`](validation/README.md).
-4. Do not add host-specific copies of the skill text.
+## Maintaining the skills
 
-The distribution is covered by the repository's Apache License 2.0; see
-[LICENSE](../LICENSE).
+When the public API or documented behavior changes:
+
+1. Update the skill that covers the affected task.
+2. Verify every API claim and code example against source, tests and docs.
+3. Keep the two skill descriptions routed to the correct task.
+4. Run the validation steps in [`validation/README.md`](validation/README.md).
+
+Do not add host-specific copies; compatible agents should read the same
+canonical skill files. The distribution is covered by the Apache License 2.0;
+see [`LICENSE`](../LICENSE).

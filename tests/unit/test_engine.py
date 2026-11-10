@@ -191,6 +191,9 @@ async def test_lineage_links_every_summarized_message():
         links = await engine.lineage(summary_id, thread_id="t1")
         assert {link.source_id for link in links} == {"m0", "m1", "m2"}
         assert await engine.lineage(summary_id, thread_id="other") == ()
+        assert await engine.delete_lineage(thread_id="other") == 0
+        assert await engine.delete_lineage(thread_id="t1") == 3
+        assert await engine.lineage(summary_id, thread_id="t1") == ()
 
 
 async def test_summaries_of_summaries_increase_the_generation():

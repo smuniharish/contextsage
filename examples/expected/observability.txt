@@ -4,13 +4,13 @@ log record 'contextsage summarization':
   "thread_id": null,
   "trigger_reason": "6 messages >= 6",
   "input_messages": 6,
-  "input_tokens": 1627,
+  "input_tokens": 1604,
   "available_tokens": 109200,
   "overflow_tokens": 0,
-  "prepared_tokens": 135,
+  "prepared_tokens": 111,
   "output_messages": 3,
-  "output_tokens": 61,
-  "compression_ratio": 0.037492317148125384,
+  "output_tokens": 55,
+  "compression_ratio": 0.03428927680798005,
   "compacted_units": 1,
   "must_preserve_units": 2,
   "must_preserve_facts": 2,
@@ -19,6 +19,15 @@ log record 'contextsage summarization':
     "text": 4
   },
   "validation_status": "failed_recovered",
-  "recovery_status": "restated_facts"
+  "recovery_status": "restated_facts",
+  "policy": "BalancedPolicy"
 }
-hook: recovery 'restated_facts' after 6 messages >= 6
+alert: recovery 'restated_facts' after 6 messages >= 6
+
+OpenTelemetry metrics:
+  contextsage.summarizations: 1
+  contextsage.input_tokens: sum=1604
+  contextsage.output_tokens: sum=55
+  contextsage.compression_ratio: sum=0.03428927680798005
+  contextsage.compacted_units: 1
+  attributes: {'validation_status': 'failed_recovered', 'recovery_status': 'restated_facts', 'policy': 'BalancedPolicy'}

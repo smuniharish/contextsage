@@ -33,7 +33,13 @@ MARKDOWN = sorted(
         ROOT / "benchmarks" / "README.md",
     }
 )
-SNIPPETS = [snippet for path in MARKDOWN for snippet in python_snippets(path)]
+SNIPPETS = [
+    snippet
+    for path in MARKDOWN
+    # The generated API reference is checked by tests/docs/test_api_reference.py.
+    if path.parent != DOCS / "reference"
+    for snippet in python_snippets(path)
+]
 
 _LINK = re.compile(r"!?\[[^\]]*\]\((?P<target><[^>]+>|[^)\s]+)")
 _REPOSITORY = re.compile(
@@ -99,6 +105,19 @@ def test_python_snippet_runs_and_prints_the_documented_output(
 
 def test_documentation_has_runnable_snippets():
     assert sum(snippet.run for snippet in SNIPPETS) >= 10
+
+
+def test_readthedocs_uv_commands_use_its_virtual_environment():
+    configuration = (ROOT / ".readthedocs.yaml").read_text(encoding="utf-8")
+    commands = [
+        line.strip().removeprefix("- ")
+        for line in configuration.splitlines()
+        if re.search(r"\buv (?:sync|run)\b", line)
+    ]
+    assert any("uv sync " in command for command in commands)
+    assert any("uv run " in command for command in commands)
+    environment = 'UV_PROJECT_ENVIRONMENT="${READTHEDOCS_VIRTUALENV_PATH}" '
+    assert all(command.startswith(environment) for command in commands), commands
 
 
 @pytest.mark.parametrize("path", MARKDOWN, ids=_relative)

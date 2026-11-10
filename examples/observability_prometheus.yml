@@ -1,12 +1,8 @@
 # Prometheus scrape configuration for examples/observability_prometheus.py.
 #
-# Start the example, then run Prometheus with this file, for example:
+# Run the exporter and Prometheus containers on the same Podman network.
 #
-#   docker run --rm -p 9090:9090 \
-#     -v "$PWD/examples/observability_prometheus.yml:/etc/prometheus/prometheus.yml:ro" \
-#     prom/prometheus
-#
-# and query contextsage_summarizations_total, contextsage_input_tokens,
+# Query contextsage_summarizations_total, contextsage_input_tokens,
 # contextsage_output_tokens, contextsage_compression_ratio or
 # contextsage_latency_ms. Replace the target with wherever the example runs.
 
@@ -16,4 +12,4 @@ global:
 scrape_configs:
   - job_name: contextsage
     static_configs:
-      - targets: ["host.docker.internal:9109"]
+      - targets: ["contextsage-prometheus-exporter:9109"]

@@ -1,82 +1,55 @@
 # Content parsing
 
-ContextSage parses every message with parsefabric's `MixedContentParser`,
-which routes each line to the parser that understands it. The resulting
-content units decide how each part of a message is scored, preserved and
-compacted.
+ContextSage uses parsefabric's mixed-content parser to identify prose, JSON,
+logs, tables, code and stack traces inside each `Message.content`. Parsing
+determines which deterministic compaction and preservation rules apply.
+Configure it with `ParsingOptions`:
 
 <figure class="diagram" markdown="span">
-  ![Each line of a message goes through parsefabric's MixedContentParser: fenced blocks go to the matching fence_routes parser or become code; other lines try your routes and then the JSON route, then the line patterns for stack traces, logs and tables, and finally code detection. The kind and severity of every line form the content units.](../assets/diagrams/decomposition.png){ width="460" }
-  <figcaption>Every line gets a kind and a severity. Consecutive lines of the
-  same kind form a content unit.</figcaption>
+  ![The mixed-content parser routes fenced blocks, custom routes, JSON, line patterns and code detection into typed content units.](../assets/diagrams/decomposition.png){ width="720" }
+  <figcaption>Custom routes are applied before the default JSON route.</figcaption>
 </figure>
 
-## How lines are recognized
-
-For each line, in order:
-
-1. **Fenced blocks.** A block that opens with a Markdown code fence goes to
-   the `fence_routes` parser registered for its language tag, if any, and is
-   code otherwise.
-2. **Routes.** Your `routes` are tried first, then the built-in JSON route,
-   which claims a line that opens a JSON object or array, through the end of
-   the document.
-3. **Line patterns.** Stack-trace lines from Python, the JVM, Node.js and Go;
-   log lines that start with a timestamp or a level such as `ERROR`, or carry
-   logfmt `level=` and `msg=` fields; and table rows.
-4. **Code detection.** Remaining lines are checked with the tree-sitter
-   grammars in `code_languages`, and are prose (`text`) otherwise.
-
-Lines then form units. Consecutive lines of one kind form one unit, and each
-JSON document and fenced block is a unit of its own. Log runs split where the
-severity crosses `WARNING`, so warnings and errors are never compacted along
-with routine lines. Indented source lines between stack-trace lines join the
-trace, and blank lines join the unit before them.
-
-The patterns run on untrusted text, so they are written to run in linear
-time. Nothing is ever executed: parsing only reads text.
-
-## Teach ContextSage your formats
-
-`routes` sends matching lines to your own parsefabric parser, and
-`fence_routes` does the same for fenced blocks by language tag. The routed
-parser's `name` becomes the content kind of the lines it claims. Content of a
-custom kind is scored and preserved like any other, and is never compacted.
-
-The example below teaches ContextSage to recognize SQL with
-[sqlglot](https://pypi.org/project/sqlglot/). The same parser instance serves
-the route and the fence, because parsefabric requires routed parsers that share
-a name to be identical:
-
 ```python
---8<--
-examples/custom_parsing.py
---8<--
+from contextsage import ContextSummarizer, ParsingOptions
+
+
+async def prepare_summarizer(model):
+    async with ContextSummarizer(
+        model,
+        parsing=ParsingOptions(max_concurrency=16),
+    ) as summarizer:
+        await summarizer.prepare()
 ```
 
-Output:
+## Extension points
 
-```text
---8<-- "examples/expected/custom_parsing.txt"
-```
+| Option | Purpose |
+| --- | --- |
+| `patterns` | Replace the default log, traceback and table line patterns. Start with `default_patterns()` to extend them. |
+| `routes` | Route lines selected by a parsefabric `Pattern` to a parser or registered parser name. |
+| `fence_routes` | Select a parser for fenced code blocks by language tag. |
+| `code_detector` | Recognize unfenced code; defaults to parsefabric's tree-sitter detector. Set to `None` to disable. |
+| `json_codec` | Supply a parsefabric JSON codec. |
+| `registry` | Resolve parser names used in `routes` and `fence_routes`. |
+| `sink` | Receive parsefabric lifecycle events. ContextSage summary events use `ContextSummarizer.sink`. |
+| `backend` | Supply an execution backend for CPU-bound parsing and analysis. You own its shutdown. |
+| `max_concurrency` | Bound concurrent message parsing; defaults to 8. |
 
-Built-in parsing already recognized the query and the suggested index as
-code. With the parser, both became `sql` content.
+Use the parsefabric ABCs for patterns, parsers, codecs, sinks and backends.
+Routes are applied before ContextSage's JSON route, allowing a custom parser
+to handle matching content first.
 
-## Code detection
+## Code grammars
 
-`code_languages` lists the tree-sitter grammars used to recognize unfenced
-code. The default is parsefabric's `DEFAULT_CODE_LANGUAGES`: Python,
-JavaScript, TypeScript, Java, Go, Rust, C, C++ and SQL.
+The default code detector prepares grammar resources lazily. Call
+`await summarizer.prepare()` during startup to validate them before serving
+requests. When code recognition is not needed, disable the detector instead
+of loading grammars.
 
-- Pass a shorter list to load fewer grammars, for example
-  `code_languages=("python", "sql")` for an agent that only sees those
-  languages.
-- Pass `code_languages=()` to turn code detection off. Unfenced code then
-  counts as prose; fenced blocks are still code.
-- Grammars that accept ordinary prose, such as `bash` or `ruby`, are rejected,
-  because every sentence would look like code.
+## Examples
 
-Code detection is the most expensive part of parsing prose-heavy histories;
-see [Performance](../operations/performance.md). Grammars are downloaded on
-first use, as described in [Installation](../getting-started/installation.md).
+- [Custom parsing](../../examples/custom_parsing.py) routes SQL to a custom
+  parser.
+- [Downstream customization](../../examples/downstream_customization.py)
+  supplies a custom JSON codec, lifecycle sink and execution backend.

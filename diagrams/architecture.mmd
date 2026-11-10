@@ -1,13 +1,17 @@
 flowchart TB
-    agent["LangChain agent<br/>create_agent, a deep agent,<br/>a swarm or a LangGraph graph"] -- "before each model call" --> middleware
-    subgraph middleware["IntelligentSummarizationMiddleware"]
+    framework["Agent framework"] --> adapter["FrameworkAdapter"]
+    adapter --> history["contextsage.Message history"]
+    history --> engine["ContextSummarizer"]
+    subgraph engine_flow["Async summarization engine"]
         direction LR
-        trigger["Trigger and<br/>token budget"] --> analyze["Analyze the history:<br/>parsefabric parsing,<br/>importance and facts"]
-        analyze --> compact["Compact<br/>structured content"]
-        compact --> summarize["Summarize older<br/>messages with LangChain's<br/>SummarizationMiddleware"]
-        summarize --> validate["Validate facts<br/>and tool calls"]
+        trigger["Count tokens<br/>and evaluate trigger"] --> parse["Parse and analyze<br/>with parsefabric"]
+        parse --> compact["Compact structured<br/>content"]
+        compact --> summarize["Summarize older messages<br/>with LanguageModel"]
+        summarize --> validate["Validate facts<br/>and tool relationships"]
     end
-    middleware -. "summary call" .-> model[("Summary<br/>chat model")]
-    middleware --> history["Rewritten history<br/>for the next model call"]
-    middleware -. "derived_from links" .-> store[("langgraph-xai<br/>provenance store")]
-    middleware -. "SummarizationEvent" .-> observe["Logging and your<br/>observability hook"]
+    engine --> engine_flow
+    engine_flow --> result["SummarizationResult<br/>and rewritten history"]
+    engine_flow -. "lineage links" .-> store[("agxai ProvenanceStore")]
+    engine_flow -. "SummarizationEvent" .-> sink["EventSink"]
+    result --> adapter
+    adapter --> framework

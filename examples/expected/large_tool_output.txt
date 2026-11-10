@@ -8,6 +8,6 @@ Diagnostics for incident INC-4410 (checkout latency).
 2026-10-04T08:02:31Z WARN slow query on orders took 2300 ms
 2026-10-04T08:02:32Z ERROR payment authorization failed for order ORD-5521
 
-tokens: 2538 -> 173
+tokens: 2517 -> 153
 compacted units: 2
 content kinds: {'json': 1, 'log': 2, 'text': 2}

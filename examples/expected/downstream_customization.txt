@@ -1,0 +1,9 @@
+backend: shut down by its owner
+tokens counted in words: 58 -> 28
+analysis steps on the custom backend: True
+parsefabric lifecycle events: ['ParseCompleted', 'ParseStarted', 'ParserSelected', 'PatternMatched']
+store writes: {'Execution': 2, 'ExecutionCompletedEvent': 1, 'ExecutionStartedEvent': 1, 'ProvenanceLink': 3}
+capture policy allowed: {'ExecutionCompletedEvent': 1, 'ExecutionStartedEvent': 1}
+observability events: True
+lineage links for summary: 3
+recorded under: fulfilment/acme/support-agent

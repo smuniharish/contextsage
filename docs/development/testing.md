@@ -1,56 +1,67 @@
 # Testing
 
-The test suite runs with [pytest](https://docs.pytest.org/) and
-[Hypothesis](https://hypothesis.readthedocs.io/), with 100% line and branch
-coverage of the package and every warning treated as an error.
+The test suite uses pytest and Hypothesis. The package is measured with
+branch coverage and the project requires 100% line and branch coverage.
 
-## Layout
+## Test areas
 
-| Directory | What it tests |
+| Directory | Coverage |
 | --- | --- |
-| `tests/unit` | Each stage on its own: budget and trigger, parsing, content units, importance, conflicts, preservation, compaction, validation, recovery, provenance and configuration |
-| `tests/property` | Hypothesis properties over generated histories: units tile messages exactly, compaction never grows content or loses a fact, restated facts always satisfy validation, fallback windows are always valid |
-| `tests/integration` | The middleware inside `create_agent` agents, with checkpointers, async calls and streaming |
-| `tests/failure` | Failing summary models, provenance stores, hooks and analysis |
-| `tests/docs` | Documentation snippets and links, rendered diagrams, the examples and the Agent Skill |
-| `tests/live` | Real models; deselected by default |
+| `tests/unit` | Budgeting, parsing, compaction, preservation, validation, recovery, provenance and configuration |
+| `tests/property` | Properties over generated message histories |
+| `tests/integration` | LangChain and LangGraph adapter behavior |
+| `tests/examples` | Offline example scripts and service-backed example behavior |
+| `tests/docs` | Documentation examples, local links and Agent Skills structure |
+| `tests/live` | Optional real-provider calls |
 
-## Run the tests
+## Run core tests
 
-```bash
-uv run coverage run -m pytest
-uv run coverage report
+Install the project's dependencies:
+
+```powershell
+uv sync --locked --all-extras --all-groups
 ```
 
-`coverage report` fails below 100%. Code that no test can reach is removed
-rather than excluded.
+Run the default suite with branch coverage:
 
-Hypothesis runs 60 examples per property by default. Continuous integration
-runs 200 with the `ci` profile:
-
-```bash
-HYPOTHESIS_PROFILE=ci uv run pytest tests/property
+```powershell
+uv run pytest --cov=contextsage --cov-branch --cov-report=term-missing:skip-covered
 ```
 
-## Markers
+The default pytest configuration excludes tests marked `live` and `examples`.
+Use an explicit selector to run examples:
 
-| Marker | Meaning |
-| --- | --- |
-| `live` | Calls a real model. Deselected by default; run with `uv run pytest -m live` |
-| `code_detection` | Needs the tree-sitter grammars, which are downloaded on first use |
+```powershell
+uv run pytest tests\examples tests\docs\test_examples.py `
+  -m "examples or not examples" --no-cov
+```
 
-The live tests read `CONTEXTSAGE_LLM_API_KEY`, and optionally
-`CONTEXTSAGE_LLM_BASE_URL` and `CONTEXTSAGE_LLM_MODEL`, from the environment or
-a `.env` file, and are skipped without them.
+Hypothesis uses its CI profile in continuous integration:
+
+```powershell
+$env:HYPOTHESIS_PROFILE = "ci"
+uv run pytest tests\property
+```
+
+## Live tests
+
+Tests that call a real model are marked `live`. Configure
+`CONTEXTSAGE_LLM_API_KEY` and, optionally,
+`CONTEXTSAGE_LLM_BASE_URL` and `CONTEXTSAGE_LLM_MODEL` before running them:
+
+```powershell
+uv run pytest tests\live -m live
+```
+
+They are excluded from routine runs and do not run without an explicitly
+configured provider.
 
 ## Examples and benchmarks
 
-```bash
-uv run python examples/verify_examples.py
-uv run python benchmarks/bench_middleware.py --smoke
+```powershell
+uv run python examples\verify_examples.py
+uv run python benchmarks\bench_middleware.py --smoke
 ```
 
-`verify_examples.py` runs every offline example and compares its output with
-the recording in `examples/expected/`; after an intended change, re-record
-with `--update` and review the diff. The benchmark smoke run checks that every
-benchmark case still works.
+The verifier compares each offline example with its recorded output. After
+an intentional change, use `--update` and review every updated fixture.

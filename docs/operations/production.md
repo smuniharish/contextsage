@@ -1,53 +1,50 @@
 # Production checklist
 
-ContextSage works with its defaults, but a production deployment should make
-a few choices deliberately.
+## Model and budget
 
-## Configuration
+- Choose a summary model with an asynchronous client and configure its
+  connection timeout and retry behavior in the provider adapter.
+- Set `maximum_context_tokens`, `reserved_output_tokens` and
+  `summarization_overhead_tokens` to the actual model and prompt budget.
+- Choose a trigger that leaves room for the summary request and the agent's
+  next response.
+- Retain enough recent messages in `keep` for the active tool exchange.
+- Add `identifier_patterns` for domain identifiers that must be recognized.
+- Exercise the chosen `PreservationPolicy` against representative histories.
 
-- [ ] **Summary model.** Use a fast, reliable model and set a `timeout` on it.
-  LangChain makes up to three attempts at each summary call, each with your
-  provider integration's own retries (for example `max_retries` on
-  `ChatOpenAI`), so keep those modest; the fallback takes over once all
-  retries are exhausted.
-- [ ] **Context window.** Check that `available_tokens` in the events matches
-  your model. If the model has no LangChain profile, set
-  `maximum_context_tokens`.
-- [ ] **Trigger.** Summarize early enough that the summary call itself fits:
-  either rely on the budget (`trigger=None`) or set a threshold below it.
-- [ ] **Keep window.** Make `keep` large enough to hold the working set of the
-  current task, such as the latest tool exchanges.
-- [ ] **Identifiers.** Add patterns for your domain's IDs to
-  `DEFAULT_IDENTIFIER_PATTERNS`, so that they survive every summary.
-- [ ] **Policy.** Start with `balanced`; see
-  [Preservation policies](../guide/policies.md).
+## Runtime and resources
 
-## Deployment
-
-- [ ] **Grammars.** Download the code-detection grammars while building your
-  image, or narrow `code_languages`; see
-  [Installation](../getting-started/installation.md#code-detection-grammars).
-- [ ] **Provenance store.** Replace the in-memory default with a durable
-  `ProvenanceStore`, which also keeps memory use flat in long-running
-  processes; see [Provenance and lineage](../guide/provenance.md#choose-a-store).
-- [ ] **Versions.** Pin ContextSage and its dependencies with a lock file,
-  and read the [changelog](../changelog.md) before upgrading.
+- Use a persistent agxai `ProvenanceStore` when lineage must survive process
+  restarts.
+- Pass the same agxai runtime used by agent instrumentation when summaries
+  should share its identity and provenance graph.
+- Call `prepare()` during startup if code-detection resources must be
+  available before requests are accepted.
+- Close the summarizer with its async context manager. Close caller-owned
+  runtimes, event sinks and parsefabric backends according to their owners'
+  lifecycle.
+- Lock the environment and install only the optional extras and provider
+  packages the application uses.
 
 ## Monitoring
 
-- [ ] **Metrics.** Export events from the `observability_hook`; see
-  [Observability](../guide/observability.md#metrics).
-- [ ] **Alerts.** Alert on the rate of `trimmed_fallback` (the summary model is
-  failing) and on any `failed_unrecovered` (something outside ContextSage
-  broke a tool exchange). A steady rate of `failed_recovered` means the summary
-  model often drops facts; a better prompt or model reduces it.
-- [ ] **Logs.** Route `WARNING` and `ERROR` records of the `contextsage` logger
-  to your log pipeline.
+- Export `SummarizationEvent` through an `EventSink`; use the
+  `OpenTelemetryEventSink` or implement a sink for your metrics system.
+- Alert on `trimmed_fallback` when the summary model is failing and
+  `failed_unrecovered` when tool-call structure needs investigation.
+- Track compression ratio, latency, preserved fact counts and
+  `failed_recovered` rates without using message content as metric labels.
+- Route warnings and errors from the `contextsage` logger to the application
+  log pipeline.
 
-## Testing
+## Privacy and validation
 
-- [ ] **Test your configuration offline.** Run the middleware on
-  representative histories with a scripted model, as the
-  [examples](../examples.md) do, and assert on the events. This catches
-  identifiers that are not recognized and triggers that never fire, without
-  calling a model.
+- Choose a summary provider and agxai storage backend that satisfy your data
+  handling requirements.
+- Keep message content and credentials out of custom events and logs.
+- Test realistic tool output, IDs, corrections, conflicts and model failures
+  using scripted models before enabling live provider calls.
+
+See [configuration](../guide/configuration.md),
+[observability](../guide/observability.md) and
+[security](security.md).

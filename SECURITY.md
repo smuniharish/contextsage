@@ -7,7 +7,6 @@ Security fixes are released for the latest minor version.
 | Version | Supported |
 | --- | --- |
 | 1.0.x | Yes |
-| 0.1.x | No |
 
 ## Reporting a vulnerability
 
@@ -35,6 +34,5 @@ patterns, as trusted. The
 [security guide](https://contextsage.readthedocs.io/en/latest/operations/security/)
 describes this model: what leaves the process, what is logged and stored, and
 how untrusted content is handled. Reports that require trusted code or
-configuration to be malicious are out of scope. Vulnerabilities in a
-dependency, such as LangChain, parsefabric or langgraph-xai, should also be
+configuration to be malicious are out of scope. Vulnerabilities in a dependency, such as LangChain, parsefabric or agxai, should also be
 reported to that project.

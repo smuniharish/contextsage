@@ -1,0 +1,11 @@
+turn 2: summarized 9 -> 6 messages, generation 1
+turn 3: summarized 10 -> 6 messages, generation 2
+turn 4: summarized 10 -> 6 messages, generation 3
+
+Final history:
+  system                   You are a database assistant.
+  summary (generation 3)   The user had replicas checked; all were healthy.
+  user                     Check replica 4 for ticket TCK-704.
+  assistant                tool call
+  tool                     2026-10-04T05:00:00Z INFO replica-4 sync ok
+  assistant                Replica 4 is healthy.

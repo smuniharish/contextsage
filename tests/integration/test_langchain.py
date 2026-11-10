@@ -133,14 +133,14 @@ def test_adapter_rewrites_content_and_marks_summaries():
     assert ADAPTER.to_message(fresh).lineage == lineage
 
 
-def test_langchain_summaries_are_read_as_first_generation_summaries():
+def test_external_summary_without_contextsage_lineage_is_not_marked_as_ours():
     native = HumanMessage(
-        content="Here is a summary", id="old", additional_kwargs={"lc_source": "summarization"}
+        content="Here is a summary",
+        id="external-summary",
+        additional_kwargs={"lc_source": "summarization"},
     )
     message = ADAPTER.to_message(native)
-    assert message.lineage is not None
-    assert message.lineage.summary_id == "old"
-    assert message.lineage.generation == 1
+    assert message.lineage is None
 
 
 def test_non_text_content_is_never_rewritten():
@@ -209,6 +209,7 @@ async def test_before_model_replaces_the_history():
     assert [message.id for message in kept] == ["m3", "m4"]
     links = await hook.alineage(summary.id, thread_id="t1")
     assert {link.source_id for link in links} == {"m0", "m1", "m2"}
+    assert await hook.adelete_lineage(thread_id="t1") == 3
     await hook.aclose()
 
 
@@ -257,7 +258,7 @@ async def test_agent_history_is_summarized_and_checkpointed():
     await hook.aclose()
 
 
-@pytest.mark.filterwarnings("ignore:The v3 streaming protocol")
+@pytest.mark.filterwarnings("ignore:The v3 streaming")
 async def test_summary_model_calls_are_hidden_or_tagged_in_streams():
     hook = middleware()
     graph = agent(hook)
@@ -272,7 +273,7 @@ async def test_summary_model_calls_are_hidden_or_tagged_in_streams():
         chunk.content
         async for chunk, metadata in graph.astream(
             {"messages": history(5)},
-            {"configurable": {"thread_id": "legacy"}},
+            {"configurable": {"thread_id": "streamed"}},
             stream_mode="messages",
         )
         if metadata.get("lc_source") == "summarization"

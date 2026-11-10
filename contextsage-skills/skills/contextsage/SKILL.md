@@ -1,197 +1,141 @@
 ---
 name: contextsage
-description: Integrate, configure, debug, or test the contextsage Python middleware, an information-aware replacement for LangChain's SummarizationMiddleware in create_agent, Deep Agents and LangGraph Swarm agents. Use when agent histories outgrow the context window, tool results carry large logs, JSON or tables, summaries lose IDs, user corrections or instructions, or summarization must be validated, survive summary-model failures, be traced to its sources, or be monitored.
+description: >-
+  Use this skill when integrating, configuring, testing, or debugging the
+  ContextSage Python package in an AI agent: long histories, large tool
+  results, lost facts, summary-model failures, async framework adapters,
+  LangChain integration, summary events, or provenance. Use contextsage-extend
+  when implementing a custom framework adapter, parser, event sink, token
+  counter, preservation policy, or downstream agxai/parsefabric component.
+  Do not use it to build retrieval or long-term memory, or to summarize
+  documents outside an agent conversation.
+license: Apache-2.0
+compatibility: >-
+  Python 3.12 or newer. Install contextsage from PyPI; install
+  contextsage[langchain] for the optional LangChain and LangGraph integration.
+metadata:
+  version: "1.0.1"
+  documentation: "https://contextsage.readthedocs.io/"
 ---
 
-# contextsage
+# ContextSage
 
-Use this skill for the existing `contextsage` Python package (import name
-`contextsage`, Python 3.12+). It is middleware for LangChain agents, not an
-agent framework, a memory store or a general parsing library.
+ContextSage is an asynchronous, framework-neutral engine for summarizing
+agent message histories while preserving facts, tool relationships and
+lineage. The core uses `contextsage.Message` and a parsefabric
+`LanguageModel`; LangChain support is an optional integration.
 
-The public API is small:
-
-```python
-from contextsage import (
-    DEFAULT_IDENTIFIER_PATTERNS,
-    ConfigurationError,
-    IntelligentSummarizationMiddleware,
-    SummarizationEvent,
-)
-```
-
-The authoritative documentation is
-[contextsage.readthedocs.io](https://contextsage.readthedocs.io/en/latest/),
-and the source, examples and tests are at
-[github.com/smuniharish/contextsage](https://github.com/smuniharish/contextsage).
-Read [How it works](https://contextsage.readthedocs.io/en/latest/guide/how-it-works/)
-before changing how an agent summarizes, and the
-[API reference](https://contextsage.readthedocs.io/en/latest/reference/) before
-using any argument this file does not show.
+Read the [quickstart](https://contextsage.readthedocs.io/en/latest/getting-started/quickstart/)
+and [API reference](https://contextsage.readthedocs.io/en/latest/reference/)
+for signatures. The source of truth is
+[`src/contextsage/`](https://github.com/smuniharish/contextsage/tree/master/src/contextsage),
+the runnable [examples](https://github.com/smuniharish/contextsage/tree/master/examples),
+and [tests](https://github.com/smuniharish/contextsage/tree/master/tests).
 
 ## Activate when
 
-Use `contextsage` when a LangChain agent's message history must be summarized
-without losing what matters. Typical indicators:
+Use this skill when an agent needs a smaller live conversation history
+without losing important context:
 
-- an agent built with `create_agent`, a Deep Agents deep agent or a LangGraph
-  Swarm agent whose history approaches the model's context window;
-- tool or MCP results that carry long logs, JSON payloads, tables or stack
-  traces;
-- summaries that drop order or ticket IDs, user corrections, standing
-  instructions or conflicting evidence;
-- summarization that must keep working when the summary model fails, link
-  each summary to its source messages, or report metrics.
+- Tool output contains large logs, JSON, tables, code or stack traces.
+- Summaries lose identifiers, user corrections, instructions or conflicting
+  values.
+- A framework needs an async adapter or LangChain summarization integration.
+- The application needs summary events, recovery behavior or lineage queries.
 
-Do not select it for retrieval or long-term memory, for summarizing documents
-outside an agent loop, or for parsing logs in general; use parsefabric
-directly for that.
+Do not treat ContextSage as retrieval, durable memory, a general document
+summarizer or a replacement for the agent framework.
 
-## Required workflow
+## Workflow
 
-### Before changing an application
+1. Check the installed ContextSage version, Python version and framework. The
+   core package requires Python 3.12 or newer and does not install LangChain.
+2. Select the integration boundary:
+   - Use `ContextSummarizer` directly for a framework-neutral loop.
+   - Install `contextsage[langchain]` for
+     `contextsage.integrations.langchain`.
+   - Use `contextsage-extend` to implement a custom adapter or dependency
+     component.
+3. Configure the summary model, trigger, retained window and actual context
+   budget. Implement `parsefabric.LanguageModel` or use the optional
+   `LangChainSummaryModel`.
+4. Preserve lineage in framework messages or checkpoint metadata. Pass the
+   same `thread_id` to `summarize` and `lineage`.
+5. Add a scripted-model test for the representative history and failure
+   cases. Run the focused tests and relevant package checks.
 
-1. Check the installed version with `contextsage.__version__` and the
-   application's dependency manifest. The package requires Python 3.12 or
-   newer and LangChain 1.x agents.
-2. Find the existing summarization: LangChain's `SummarizationMiddleware` in
-   a `middleware=[...]` list, the summarization Deep Agents add by default, or
-   hand-written trimming. ContextSage replaces it; never run two summarization
-   middleware on one agent.
-3. Identify the summary model, the application's ID formats, and whether the
-   agent runs with a checkpointer.
+## Core usage
 
-### Configure
-
-`IntelligentSummarizationMiddleware(model, ...)` takes the summary model, a
-chat model or an `init_chat_model` identifier, and keyword arguments:
-
-| Need | Argument |
-| --- | --- |
-| When to summarize | `trigger`: LangChain's forms, or `None` (default) to summarize when the history exceeds the token budget |
-| Recent history the summary must not replace | `keep`, default `("messages", 20)` |
-| A model without a LangChain profile | `maximum_context_tokens` |
-| Domain IDs that must survive verbatim | `identifier_patterns=[*DEFAULT_IDENTIFIER_PATTERNS, re.compile(...)]` |
-| Content formats of your own | `routes` and `fence_routes` with parsefabric parsers |
-| Offline hosts or prose-heavy histories | `code_languages=()`, or a shorter tuple of grammars |
-| How aggressively to compact | `policy`: `"balanced"` (default), `"maximum_preservation"` or `"maximum_compression"` |
-| Metrics and alerts | `observability_hook`, a callable that receives a `SummarizationEvent` |
-| Durable provenance | `provenance_store`, a langgraph-xai `ProvenanceStore` |
-
-Invalid arguments raise `ConfigurationError` when the middleware is created.
-See [Configuration](https://contextsage.readthedocs.io/en/latest/guide/configuration/).
-
-### Integrate
-
-- **`create_agent`**: pass the middleware in `middleware=[...]` where
-  `SummarizationMiddleware` was. Sync and async agents need nothing else.
-- **Deep Agents**: before `create_deep_agent(..., middleware=[...])`, call
-  `register_harness_profile(provider, HarnessProfile(excluded_middleware=frozenset({"SummarizationMiddleware"})))`
-  so ContextSage replaces the built-in summarization.
-- **LangGraph Swarm**: add the middleware to the agents whose tool results
-  grow large.
-
-The [agent integrations guide](https://contextsage.readthedocs.io/en/latest/guide/integrations/)
-and the [examples](https://github.com/smuniharish/contextsage/tree/master/examples)
-show each case.
-
-### Observe
-
-Each rewrite emits one content-free `SummarizationEvent`, logged to the
-`contextsage` logger and passed to `observability_hook`. Alert on
-`recovery_status == "trimmed_fallback"` (the summary model is failing) and on
-`validation_status == "failed_unrecovered"` (a tool result lost its call).
-Label metrics only with these statuses, never with IDs.
-
-## Example
+Convert native messages with `FrameworkAdapter`, then use the returned
+history only when the engine produces a result:
 
 ```python
-from itertools import cycle
-
-from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
-from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
-from langgraph.runtime import Runtime
-
-from contextsage import IntelligentSummarizationMiddleware, SummarizationEvent
-
-summary = AIMessage("The user asked about a refund.")
-events: list[SummarizationEvent] = []
-middleware = IntelligentSummarizationMiddleware(
-    model=GenericFakeChatModel(messages=cycle([summary])),
-    trigger=("messages", 5),
-    keep=("messages", 1),
-    observability_hook=events.append,
-)
-history = [
-    HumanMessage("Never refund more than 500 dollars without approval."),
-    HumanMessage("Check the refund for order ORD-7731."),
-    AIMessage("", tool_calls=[{"id": "c1", "name": "refund_log", "args": {}}]),
-    ToolMessage("refund TX-3108 for ORD-7731 failed: card expired", tool_call_id="c1"),
-    HumanMessage("What should we do next?"),
-]
-update = middleware.before_model({"messages": history}, Runtime())
-print(update["messages"][1].text)
-event = events[0]
-print(event.validation_status, event.recovery_status)
+async def summarize_turn(engine, messages, thread_id):
+    result = await engine.summarize(messages, thread_id=thread_id)
+    if result is None:
+        return messages
+    return list(result.messages)
 ```
 
-Output:
+`summarize` returns `None` when no trigger fires. When it rewrites a history,
+the `SummarizationResult` contains the complete replacement messages and a
+content-free `SummarizationEvent`.
 
-```text
-Here is a summary of the conversation to date:
+## Configuration guide
 
-The user asked about a refund.
+| Need | Use |
+| --- | --- |
+| Trigger | `("tokens", n)`, `("messages", n)`, a conjunction mapping, or a list of alternatives |
+| Keep recent context | `keep=("messages", n)`, token count, or context-window fraction |
+| Preserve domain identifiers | Extend `DEFAULT_IDENTIFIER_PATTERNS` with compiled regexes |
+| Change content parsing | `ParsingOptions` and parsefabric extension points |
+| Change preservation behavior | A built-in policy or `PreservationPolicy` ABC |
+| Count model tokens | `TokenCounter` ABC or parsefabric `Tokenizer` through `TokenizerTokenCounter` |
+| Export events | `EventSink`, `CompositeEventSink`, or `OpenTelemetryEventSink` |
+| Persist lineage | Supply an agxai `ProvenanceStore` through `create_agxai_runtime` |
 
-Facts preserved verbatim from the earlier conversation:
-- User instruction: "Never refund more than 500 dollars without approval."
-- ORD-7731
-- TX-3108
-failed_recovered restated_facts
-```
+Use `ContextSummarizer.prepare()` during startup when parsing resources must
+be validated before traffic. Keep cancellation propagation intact. List
+framework control-flow exception types in `propagate_errors`; ordinary model
+failures use the bounded trimming fallback.
 
-The scripted summary dropped the instruction and both IDs, so ContextSage
-restated them inside the summary message. `update["messages"][0]` is the
-`RemoveMessage` that replaces the old history.
+## LangChain integration
 
-## Integration rules
+Install `contextsage[langchain]` and import
+`IntelligentSummarizationMiddleware` from
+`contextsage.integrations.langchain`. Use it in LangChain agent middleware;
+do not instantiate the integration through a core-package import. The
+integration adapts native messages, summary-model calls, token counting and
+framework control-flow errors.
 
-- Replace summarization; do not stack it.
-- Keep `validation_enabled=True`; it is what guarantees that facts survive.
-- In production, pass a durable `provenance_store`; the in-memory default
-  keeps links until the process exits.
-- Prefetch the tree-sitter grammars for offline deployments, or pass
-  `code_languages=()`.
-- Set a timeout on the summary model. LangChain makes up to three attempts at
-  each summary call, on top of the integration's own retries; ContextSage's
-  fallback applies after all of them are exhausted.
-- Read API keys from the environment, never from source code.
+For Deep Agents or LangGraph Swarm, inspect the installed versions and follow
+their documented middleware APIs. Do not assume framework-specific setup
+that is not shown in the current examples:
+[LangChain](https://github.com/smuniharish/contextsage/blob/master/examples/langchain_agent.py),
+[Deep Agent](https://github.com/smuniharish/contextsage/blob/master/examples/deep_agent.py),
+[swarm](https://github.com/smuniharish/contextsage/blob/master/examples/swarm.py).
 
-## Prohibited shortcuts
+## Rules
 
-Do **not**:
+- Keep application integration asynchronous and framework-specific code at
+  the adapter boundary.
+- Do not infer public arguments from private modules; use the API reference.
+- Keep `validation_enabled=True` unless a separately tested validation layer
+  replaces it.
+- Do not log message content or use conversation IDs as metric labels.
+- Store lineage metadata with checkpointed messages so later summaries can
+  continue the ancestry chain.
+- For a custom component, follow the `contextsage-extend` skill and subclass
+  the documented ABC.
 
-- invent imports, arguments, event fields or statuses; check the API
-  reference;
-- import from underscore-prefixed modules of `contextsage`;
-- reimplement summarization, token counting, trimming or parsing that
-  LangChain or parsefabric already provide;
-- run LangChain's `SummarizationMiddleware` alongside ContextSage;
-- turn validation off to silence `failed_recovered` events; improve the
-  summary model or prompt instead;
-- edit `src/contextsage/` when the task is an application integration.
+## Verify
 
-## Verification checklist
+- Test a history below and above the configured trigger.
+- Assert important IDs and corrections remain in the returned history.
+- Test summary-model failure and framework control-flow exceptions.
+- Verify `SummarizationEvent` statuses and provenance queries.
+- Run the repository's targeted tests, examples and type checks for the
+  changed surface.
 
-For an application change, add a focused test that runs the middleware's
-`before_model` on a representative history with a scripted chat model such as
-`GenericFakeChatModel`, and asserts that the application's IDs survive in the
-rewritten messages and that `validation_status` is `passed` or
-`failed_recovered`. Run the project's formatter, linter, type checker and
-tests.
-
-For changes to this skill, follow the
-[validation process](https://github.com/smuniharish/contextsage/blob/master/contextsage-skills/validation/README.md).
-Consult the [documentation](https://contextsage.readthedocs.io/en/latest/),
-[examples](https://github.com/smuniharish/contextsage/tree/master/examples) and
-[tests](https://github.com/smuniharish/contextsage/tree/master/tests) rather than
-expanding this file into a second manual.
+For service-backed examples, dependency inventory and operational guidance,
+see the [documentation](https://contextsage.readthedocs.io/).

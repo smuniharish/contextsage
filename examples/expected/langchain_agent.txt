@@ -1,0 +1,8 @@
+History after the agent turn:
+  human The user asked to investigate the payments outage INC-9931; the incident report shows...
+  ai    calls incident_report
+  tool  Incident INC-9931: elevated latency on the payments service.
+  ai    INC-9931 is caused by connection pool exhaustion while settling TX-991.
+
+tokens: 3266 -> 184
+validation: passed, must-keep facts: 2

@@ -1,79 +1,117 @@
-# Agent integrations
+# Framework and package integrations
 
-`IntelligentSummarizationMiddleware` is LangChain agent middleware. It works
-with agents built by `create_agent` and with frameworks built on it, such as
-Deep Agents and LangGraph Swarm.
+The ContextSage core accepts `Message` objects and a parsefabric
+`LanguageModel`. It has no framework dependency. An adapter translates a
+framework's message types at the boundary, leaving summarization behavior
+identical across integrations.
 
-## LangChain agents
+## Custom frameworks
 
-Pass the middleware to `create_agent`, as in the
-[quickstart](../getting-started/quickstart.md). Use one summarization
-middleware per agent: ContextSage replaces LangChain's
-`SummarizationMiddleware` rather than running alongside it.
+Implement `FrameworkAdapter[NativeT]` as an ABC. `to_message` preserves the
+framework object in `Message.native`; `from_message` returns or updates native
+messages where possible and creates framework messages for summaries. Override
+`propagated_errors` for framework control-flow exceptions.
 
-When an agent has several middleware, their `before_model` hooks run in list
-order. Put ContextSage where you would put `SummarizationMiddleware`,
-typically after middleware that adds messages to the history and before
-middleware that only inspects the model call.
-
-## Synchronous and asynchronous agents
-
-`invoke` and `stream` run the synchronous hook, and `ainvoke` and `astream`
-the asynchronous one; both behave identically. Analysis is CPU-bound, so the
-asynchronous hook runs it in a worker thread and never blocks the event loop.
-parsefabric parses asynchronously, so the synchronous hook runs it on a
-private event loop, which leaves any event loop your thread has set
-untouched.
-
-## Checkpointers and threads
-
-With a checkpointer, the rewritten history is saved in the thread's state like
-any other update, and each later turn starts from it. A summary that is
-summarized again becomes the next generation of the same lineage, and
-provenance links are scoped to the thread; see
-[Provenance and lineage](provenance.md).
-
-## Streaming
-
-When you stream an agent with `stream_events(version="v3")`, the summary
-model's tokens are kept out of the agent's message stream: ContextSage marks
-the summary call as internal, as LangChain does for its own summarization.
-
-## Deep Agents
-
-Deep Agents add LangChain's `SummarizationMiddleware` to every deep agent.
-Exclude it with a harness profile for your model provider, so that
-ContextSage replaces it instead of running alongside it:
-
+<!-- docs-test: skip -->
 ```python
---8<--
-examples/deep_agent.py
---8<--
+class MyAdapter(FrameworkAdapter[NativeMessage]):
+    def to_message(self, native: NativeMessage) -> Message: ...
+
+    def from_message(self, message: Message) -> NativeMessage: ...
 ```
 
-## LangGraph Swarm
+Convert a full history with `adapter.to_messages`, pass it to
+`ContextSummarizer.summarize`, and convert `result.messages` back with
+`adapter.from_messages`. Store `Message.lineage` in framework metadata or
+checkpoint state so provenance survives later turns. See the
+[custom framework example](../../examples/custom_framework.py).
 
-In a swarm, add ContextSage to the agents whose histories grow large, such as
-those that call tools with large results. Each agent's middleware sees the
-shared conversation before that agent's model calls:
+## LangChain
 
+Install `contextsage[langchain]` to use the optional integration:
+
+<!-- docs-test: skip -->
 ```python
---8<--
-examples/swarm.py
---8<--
+from contextsage.integrations.langchain import IntelligentSummarizationMiddleware
+
+agent = create_agent(
+    model=agent_model,
+    tools=tools,
+    middleware=[
+        IntelligentSummarizationMiddleware(
+            summary_model,
+            trigger=("tokens", 100_000),
+            keep=("messages", 20),
+        )
+    ],
+)
 ```
 
-`without_speaker_names` is only needed for OpenAI-compatible endpoints that
-reject the `name` that swarm agents put on their messages; the OpenAI API
-accepts it.
+The integration provides:
 
-## Run the live examples
+- `LangChainAdapter` for native LangChain messages and lineage metadata.
+- `LangChainSummaryModel` for asynchronous chat-model calls.
+- `LangChainTokenCounter` using LangChain's token-counting function.
+- `IntelligentSummarizationMiddleware` for LangChain agents and Deep Agents.
 
-These examples call a real model. Configure an OpenAI-compatible endpoint
-through the environment, or a local `.env` file, as described in the
-[examples README](https://github.com/smuniharish/contextsage/blob/master/examples/README.md),
-then run, for example:
+`LINEAGE_KEY` identifies the lineage stored in summary-message metadata.
+Access the engine through `middleware.summarizer`; use `alineage` and
+`adelete_lineage` for asynchronous provenance operations.
 
-```bash
-uv run python examples/deep_agent.py
-```
+## Downstream customization
+
+ContextSage intentionally forwards its dependency extension points.
+
+### parsefabric
+
+Use `ParsingOptions` to supply all parser-related customization:
+
+- `LanguageModel` for summary generation.
+- `Tokenizer` through `TokenizerTokenCounter`.
+- `Pattern` objects and parser routes, either direct or registry-resolved.
+- Fenced-code parsers and code detector.
+- JSON codec.
+- Parse/execution lifecycle `ObservabilitySink`.
+- CPU/I/O `ExecutionBackend` and message-level concurrency.
+
+Each parsefabric component follows the dependency's ABC. See
+[content parsing](content-parsing.md) and
+[downstream customization](../../examples/downstream_customization.py).
+
+### agxai
+
+`create_agxai_runtime` accepts:
+
+- `XAIConfig` and `Registry`.
+- Application, tenant and graph IDs.
+- `XAIPlugin` instances and custom state capture.
+- `ProvenanceStore`.
+- `ObservabilityProvider`, `AttributionEngine`, `ExplanationEngine`, and
+  `PolicyProvider`.
+- `CapturePolicy`.
+
+The helper validates supplied components and registers them with an
+`XAIRuntime`. Use the same runtime with agent instrumentation when summaries
+should appear in the same graph.
+
+### ContextSage and telemetry
+
+ContextSage defines ABCs for `FrameworkAdapter`, `TokenCounter`,
+`PreservationPolicy` and `EventSink`. Its event sinks include structured
+logging, composite delivery and OpenTelemetry. Implement an `EventSink` for
+another telemetry backend.
+
+## Package and extra inventory
+
+| Package | Install scope | Role |
+| --- | --- | --- |
+| `parsefabric` | Core dependency | Message parsing, language-model and tokenizer ABCs, parser and execution extension points |
+| `agxai` | Core dependency | Runtime, provenance storage and registered capabilities |
+| `opentelemetry-api` | Core dependency | Tracing API used by ContextSage |
+| `langchain`, `langchain-core`, `langgraph` | `contextsage[langchain]` | Optional framework integration |
+| `opentelemetry-sdk`, `opentelemetry-exporter-otlp-proto-http` | `contextsage[otel]` | Optional OpenTelemetry export |
+| `deepagents`, `langchain-openai`, `langgraph-swarm`, `prometheus-client`, `psycopg`, `python-dotenv`, `sqlglot` | Development `examples` group | Runnable demos and service-backed verification; not runtime requirements |
+
+Install `contextsage[all]` to combine both optional extras. The package does
+not require unrelated logging or storage frameworks; choose the providers
+that fit your application.

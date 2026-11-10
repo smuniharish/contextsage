@@ -22,6 +22,9 @@ EXAMPLES = Path(__file__).resolve().parent
 EXPECTED = EXAMPLES / "expected"
 OFFLINE = (
     "quickstart",
+    "langchain_agent",
+    "custom_framework",
+    "downstream_customization",
     "large_tool_output",
     "preservation",
     "policies",
@@ -51,18 +54,14 @@ def run(name: str) -> str:
         env=environment,
     )
     if completed.returncode:
-        raise SystemExit(
-            f"{name}.py exited with {completed.returncode}:\n{completed.stderr}"
-        )
+        raise SystemExit(f"{name}.py exited with {completed.returncode}:\n{completed.stderr}")
     return completed.stdout.replace("\r\n", "\n")
 
 
 def main() -> int:
     """Verify, or with ``--update`` re-record, every offline example."""
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument(
-        "--update", action="store_true", help="re-record the expected output"
-    )
+    parser.add_argument("--update", action="store_true", help="re-record the expected output")
     update = parser.parse_args().update
     failed = []
     for name in OFFLINE:
