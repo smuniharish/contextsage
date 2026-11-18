@@ -379,15 +379,15 @@ types = [
 
 [package.metadata]
 requires-dist = [
-    { name = "agxai", specifier = ">=1.0.2,<2" },
+    { name = "agxai", specifier = ">=1.0.3,<2" },
     { name = "contextsage", extras = ["langchain", "otel"], marker = "extra == 'all'" },
-    { name = "langchain", marker = "extra == 'langchain'", specifier = ">=1.4.9,<2" },
-    { name = "langchain-core", marker = "extra == 'langchain'", specifier = ">=1.7.6,<2" },
-    { name = "langgraph", marker = "extra == 'langchain'", specifier = ">=1.2.20,<2" },
+    { name = "langchain", marker = "extra == 'langchain'", specifier = ">=1.5.0,<2" },
+    { name = "langchain-core", marker = "extra == 'langchain'", specifier = ">=1.8.2,<2" },
+    { name = "langgraph", marker = "extra == 'langchain'", specifier = ">=1.2.22,<2" },
     { name = "opentelemetry-api", specifier = ">=1.45.2,<2" },
     { name = "opentelemetry-exporter-otlp-proto-http", marker = "extra == 'otel'", specifier = ">=1.45.2,<2" },
     { name = "opentelemetry-sdk", marker = "extra == 'otel'", specifier = ">=1.45.2,<2" },
-    { name = "parsefabric", specifier = ">=1.0.0,<2" },
+    { name = "parsefabric", specifier = ">=1.0.1,<2" },
 ]
 provides-extras = ["langchain", "otel", "all"]
 
@@ -404,13 +404,13 @@ dev = [
 ]
 docs = [{ name = "zensical", specifier = ">=0.1.2,<0.2" }]
 examples = [
-    { name = "deepagents", specifier = ">=0.7.34,<1" },
-    { name = "langchain-openai", specifier = ">=1.7.4,<2" },
+    { name = "deepagents", specifier = ">=0.7.39,<1" },
+    { name = "langchain-openai", specifier = ">=1.8.1,<2" },
     { name = "langgraph-swarm", specifier = ">=0.1.0,<1" },
     { name = "prometheus-client", specifier = ">=0.26.0,<1" },
-    { name = "psycopg", extras = ["binary", "pool"], specifier = ">=3.3.8,<4" },
+    { name = "psycopg", extras = ["binary", "pool"], specifier = ">=3.3.9,<4" },
     { name = "python-dotenv", specifier = ">=1.2.4,<2" },
-    { name = "sqlglot", specifier = ">=30.30.0,<31" },
+    { name = "sqlglot", specifier = ">=30.33.0,<31" },
 ]
 lint = [{ name = "ruff", specifier = ">=0.17.5" }]
 test = [

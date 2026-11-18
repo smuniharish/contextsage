@@ -43,6 +43,15 @@ agxai documents Node.js 22.20 or newer.
 | [LangChain](https://github.com/langchain-ai/langchain-skills) | `langchain-build-agent`, `langchain-agent-tracing`, `langchain-agent-monitoring`, `langchain-eval-engineering` | Optional LangChain, LangGraph and Deep Agents workflows |
 | [tree-sitter language pack](https://github.com/xberg-io/tree-sitter-language-pack/tree/main/skills) | `tree-sitter-language-pack` and focused skills | Code parsing and parser management |
 
+The language pack's focused skills are
+`tree-sitter-language-pack-chunking-for-llms`,
+`tree-sitter-language-pack-detecting-languages`,
+`tree-sitter-language-pack-extracting-code-structure`,
+`tree-sitter-language-pack-managing-parsers`,
+`tree-sitter-language-pack-parsing-source`, and
+`tree-sitter-language-pack-using-the-mcp-server`. Select a skill by name using
+the same CLI command shown below.
+
 For example, install the two core dependency skill sets:
 
 ```bash
@@ -59,6 +68,9 @@ npx skills add langchain-ai/langchain-skills --skill '*' --yes
 The LangChain skills-only install does not register its documentation MCP
 servers. LangChain describes its skills project as early development; consult
 its current documentation for updates and any additional setup.
+Its recommended plugin installation also bundles documentation MCP servers;
+see the [upstream instructions](https://github.com/langchain-ai/langchain-skills#installation)
+for supported agents and migration from older standalone skills.
 
 For code-detection work, install the language-pack skill separately:
 
@@ -85,6 +97,10 @@ claude plugin install pydantic@pydantic-skills
 
 Consult each upstream for supported agents, manual installation and
 prerequisites. Neither plugin is required by ContextSage.
+
+No independently installable first-party skills were confirmed for the other
+direct dependencies and example tools during this review; check their official
+documentation for updates. Third-party skills are not endorsed by this list.
 
 ## Maintain and verify
 

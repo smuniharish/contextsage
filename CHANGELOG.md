@@ -13,6 +13,11 @@ Preparing version 1.0.2.
 - Documented independently maintained dependency and integration Agent Skills.
 - Refreshed the dependency lockfile and development tooling, and documented
   maintainer-controlled manual release steps.
+- Raised the minimum supported versions of agxai, parsefabric, the optional
+  LangChain integration and several example dependencies to current stable
+  releases. Existing installations with older versions must upgrade them.
+- Made the generated API overview more conceptual and clarified upstream
+  skill availability and installation options.
 
 ## [1.0.1]
 

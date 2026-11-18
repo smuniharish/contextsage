@@ -41,16 +41,16 @@ classifiers = [
   "Typing :: Typed",
 ]
 dependencies = [
-  "agxai>=1.0.2,<2",
+  "agxai>=1.0.3,<2",
   "opentelemetry-api>=1.45.2,<2",
-  "parsefabric>=1.0.0,<2",
+  "parsefabric>=1.0.1,<2",
 ]
 
 [project.optional-dependencies]
 langchain = [
-  "langchain>=1.4.9,<2",
-  "langchain-core>=1.7.6,<2",
-  "langgraph>=1.2.20,<2",
+  "langchain>=1.5.0,<2",
+  "langchain-core>=1.8.2,<2",
+  "langgraph>=1.2.22,<2",
 ]
 otel = [
   "opentelemetry-exporter-otlp-proto-http>=1.45.2,<2",
@@ -83,13 +83,13 @@ dev = [
   { include-group = "types" },
 ]
 examples = [
-  "deepagents>=0.7.34,<1",
-  "langchain-openai>=1.7.4,<2",
+  "deepagents>=0.7.39,<1",
+  "langchain-openai>=1.8.1,<2",
   "langgraph-swarm>=0.1.0,<1",
   "prometheus-client>=0.26.0,<1",
-  "psycopg[binary,pool]>=3.3.8,<4",
+  "psycopg[binary,pool]>=3.3.9,<4",
   "python-dotenv>=1.2.4,<2",
-  "sqlglot>=30.30.0,<31",
+  "sqlglot>=30.33.0,<31",
 ]
 
 [tool.uv]

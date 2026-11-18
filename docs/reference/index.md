@@ -36,13 +36,10 @@ class ContextSummarizer:
 
 Information-aware summarization of an agent's message history.
 
-`summarize` decides whether the history needs summarizing. When it does,
-ContextSage parses every message with parsefabric into content units
-(prose, JSON, logs, tables, code, stack traces), scores them, decides what
-must be preserved, and losslessly compacts low-value structured content.
-The summary model then summarizes the older messages, ContextSage verifies
-that every must-preserve fact survived and restates any that did not, and
-links the summarized messages to the summary in an agxai provenance store.
+`summarize` decides whether to rewrite a history, preserving important
+information while reducing its size. It uses parsefabric for content parsing
+and agxai to record summary lineage. Optional validation checks and
+restores required facts when possible.
 
 The engine works with [`contextsage.Message`](#contextsage.Message) objects, so it fits any agent
 framework: convert native messages with a [`contextsage.FrameworkAdapter`](#contextsage.FrameworkAdapter),
