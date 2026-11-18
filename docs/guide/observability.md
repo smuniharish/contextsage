@@ -28,9 +28,9 @@ Install `contextsage[otel]` for the SDK and OTLP exporter, then configure the
 provider/exporter in your application. ContextSage also creates spans for
 summarization, analysis, model calls, validation and provenance.
 
-The [OpenTelemetry example](../../examples/otel_export.py) sends traces and
+The [OpenTelemetry example](https://github.com/smuniharish/contextsage/blob/master/examples/otel_export.py) sends traces and
 metrics through a collector to Jaeger. The
-[Prometheus example](../../examples/observability_prometheus.py) shows a
+[Prometheus example](https://github.com/smuniharish/contextsage/blob/master/examples/observability_prometheus.py) shows a
 custom event sink.
 
 ## Parse lifecycle events

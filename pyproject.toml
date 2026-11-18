@@ -1,10 +1,10 @@
 [build-system]
-requires = ["uv_build>=0.13.7,<0.14"]
+requires = ["uv_build>=0.13.9,<0.14"]
 build-backend = "uv_build"
 
 [project]
 name = "contextsage"
-version = "1.0.1"
+version = "1.0.2"
 description = "Information-aware, framework-agnostic context summarization for AI agents."
 readme = "README.md"
 requires-python = ">=3.12"
@@ -70,13 +70,13 @@ test = [
   "hypothesis>=6.170.15",
   "opentelemetry-sdk>=1.45.2,<2",
   "pytest>=9.2.0",
-  "pytest-asyncio>=1.4.1.post1",
+  "pytest-asyncio>=1.5.0",
   "pytest-cov>=7.1.0",
   "skills-ref>=0.1.1,<1",
 ]
-lint = ["ruff>=0.17.4"]
+lint = ["ruff>=0.17.5"]
 types = ["pyrefly>=1.4.1"]
-docs = ["zensical>=0.1.0,<0.2"]
+docs = ["zensical>=0.1.2,<0.2"]
 dev = [
   { include-group = "test" },
   { include-group = "lint" },

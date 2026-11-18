@@ -24,7 +24,7 @@ Convert a full history with `adapter.to_messages`, pass it to
 `ContextSummarizer.summarize`, and convert `result.messages` back with
 `adapter.from_messages`. Store `Message.lineage` in framework metadata or
 checkpoint state so provenance survives later turns. See the
-[custom framework example](../../examples/custom_framework.py).
+[custom framework example](https://github.com/smuniharish/contextsage/blob/master/examples/custom_framework.py).
 
 ## LangChain
 
@@ -76,7 +76,7 @@ Use `ParsingOptions` to supply all parser-related customization:
 
 Each parsefabric component follows the dependency's ABC. See
 [content parsing](content-parsing.md) and
-[downstream customization](../../examples/downstream_customization.py).
+[downstream customization](https://github.com/smuniharish/contextsage/blob/master/examples/downstream_customization.py).
 
 ### agxai
 

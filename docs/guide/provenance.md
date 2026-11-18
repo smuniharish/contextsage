@@ -43,4 +43,4 @@ application/tenant/graph identity, plugins, custom state capture, and custom
 observability, attribution, explanation, policy and capture-policy providers.
 This keeps lineage interoperable with other agxai instrumentation in the
 agent. See [downstream customization](integrations.md#downstream-customization)
-and the [PostgreSQL example](../../examples/postgres_store.py).
+and the [PostgreSQL example](https://github.com/smuniharish/contextsage/blob/master/examples/postgres_store.py).

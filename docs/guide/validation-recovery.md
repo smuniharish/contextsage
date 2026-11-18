@@ -5,7 +5,7 @@ preservation still appear in the rewritten history and that tool results
 remain paired with their calls.
 
 <figure class="diagram" markdown="span">
-  ![Validation checks required facts and tool-call relationships; missing facts are restated, while model failures use a safe trimming fallback.](../assets/diagrams/validation-recovery.png){ width="720" }
+  ![Validation and model-failure recovery produce results and status information.](../assets/diagrams/validation-recovery.png){ width="720" }
   <figcaption>Validation and recovery outcomes are reported in the event.</figcaption>
 </figure>
 
@@ -40,5 +40,5 @@ pass its type in `propagate_errors`. Cancellation always propagates.
 used. An unmatched tool result is logged because adding facts cannot repair
 its missing tool call.
 
-See the [recovery example](../../examples/recovery.py) and the
+See the [recovery example](https://github.com/smuniharish/contextsage/blob/master/examples/recovery.py) and the
 [event reference](../reference/index.md#configuration-and-events).

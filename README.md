@@ -99,8 +99,10 @@ verified in CI. The
 installation, configuration, integration guides, operations guidance and the
 [API reference](https://contextsage.readthedocs.io/en/latest/reference/).
 
-ContextSage also publishes an [Agent Skill](contextsage-skills/README.md) for
-coding agents that need to integrate or extend the package.
+ContextSage also publishes [Agent Skills](contextsage-skills/README.md) for
+coding agents that need to integrate or extend the package. The
+[skills guide](docs/agent-skills.md) also lists independently maintained
+dependency and integration skills.
 
 ## Development
 

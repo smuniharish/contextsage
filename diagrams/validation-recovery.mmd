@@ -1,10 +1,5 @@
 flowchart TB
-    summary["Rewritten history"] --> facts{"Every required<br/>fact present?"}
-    facts -- yes --> pairs{"Every tool result<br/>has its tool call?"}
-    facts -- no --> restate["Restate the missing facts<br/>verbatim in the summary"]
-    restate --> pairs
-    pairs -- yes --> valid(["passed or<br/>failed_recovered"])
-    pairs -- no --> orphaned(["failed_unrecovered,<br/>logged as a warning"])
-    failure["Summary model fails"] --> trim["Trim to the keep window,<br/>keeping tool exchanges whole"]
-    trim --> notice["Add a notice with the latest<br/>request and the lost facts"]
-    notice --> fallback(["trimmed_fallback"])
+    summary["Summarized history"] --> validation["Fact and tool relationship validation"]
+    validation --> result["Result and validation status"]
+    failure["Summary model failure"] --> recovery["Fallback history"]
+    recovery --> event["Recovery status"]

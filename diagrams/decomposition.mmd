@@ -1,13 +1,4 @@
 flowchart TB
-    subgraph parser["parsefabric MixedContentParser"]
-        message["Each line of the message"] --> fence{"Fenced<br/>block?"}
-        fence -- yes --> fenced["fence_routes parser"]
-        fence -- no --> routes["Custom routes,<br/>then ContextSage JSON route"]
-        routes -- unmatched --> patterns["Patterns for<br/>logs, tables, stack traces"]
-        patterns -- unmatched --> code["Code detection with<br/>tree-sitter grammars"]
-    end
-    fenced --> lines["Kind and severity of every line"]
-    routes --> lines
-    patterns --> lines
-    code --> lines
-    lines --> units["Content units for analysis,<br/>preservation and compaction"]
+    messages["Message content"] --> parser["parsefabric content parsing"]
+    options["ParsingOptions and custom components"] --> parser
+    parser --> content["Recognized content for summarization"]

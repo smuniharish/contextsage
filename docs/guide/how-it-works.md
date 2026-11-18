@@ -5,27 +5,18 @@ first. It returns a `SummarizationResult` when it rewrites the history, or
 `None` when no trigger fires and no rewrite is needed.
 
 <figure class="diagram" markdown="span">
-  ![ContextSummarizer counts tokens, evaluates the trigger, analyzes and compacts history, summarizes older messages, validates facts, and records lineage and events.](../assets/diagrams/pipeline.png){ width="720" }
+  ![The summarizer returns either no change or a rewritten history with an event.](../assets/diagrams/pipeline.png){ width="720" }
   <figcaption>One asynchronous summarization call.</figcaption>
 </figure>
 
-## Processing stages
+## Summarization
 
-1. **Count and decide.** The configured `TokenCounter` counts the history.
-   `trigger` or the available context budget determines whether to run.
-2. **Parse and analyze.** parsefabric identifies content units such as prose,
-   JSON, logs, tables, code and stack traces. ContextSage scores units,
-   identifies facts to preserve, and tracks tool-call relationships.
-3. **Compact.** Repetitive structured content is compacted deterministically
-   according to the active `PreservationPolicy`.
-4. **Summarize.** The configured `LanguageModel` summarizes messages older
-   than the `keep` window. Leading system messages remain in the history.
-5. **Validate and recover.** Required facts are checked in the result. Missing
-   facts are restated; if the model call fails, the engine trims to the keep
-   window and adds a recovery notice.
-6. **Record and report.** Summary lineage is written through agxai's
-   `ProvenanceStore`, and a content-free `SummarizationEvent` is delivered to
-   the configured sink.
+The configured trigger and context budget determine whether a rewrite is
+needed. ContextSage processes mixed content according to the preservation
+policy and uses the configured model for older messages when appropriate.
+Leading system messages and the configured recent window are retained.
+Validation and recovery outcomes are reported in the event; summary lineage
+is stored through agxai.
 
 ## Async execution
 

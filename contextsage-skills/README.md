@@ -30,6 +30,9 @@ npx skills add smuniharish/contextsage --skill contextsage-extend
 To install manually, copy the selected skill directory, including
 `SKILL.md`, into the skills location used by your agent.
 
+For separately maintained parsefabric, agxai, LangChain and tooling skills,
+see the [dependency skills guide](../docs/agent-skills.md#skills-from-dependencies-and-integrations).
+
 ## Maintaining the skills
 
 When the public API or documented behavior changes:

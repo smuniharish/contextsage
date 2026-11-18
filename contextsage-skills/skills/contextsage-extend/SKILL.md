@@ -13,7 +13,7 @@ compatibility: >-
   Python 3.12 or newer with contextsage 1.x installed. Install
   contextsage[langchain] only when the adapter integrates LangChain.
 metadata:
-  version: "1.0.1"
+  version: "1.0.2"
   documentation: "https://contextsage.readthedocs.io/en/latest/guide/integrations/"
 ---
 

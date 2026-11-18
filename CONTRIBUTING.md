@@ -2,7 +2,7 @@
 
 Thank you for helping improve ContextSage. Bug reports, documentation fixes,
 content recognition and performance work are welcome. Follow the
-[code of conduct](CODE_OF_CONDUCT.md) in all project spaces.
+[code of conduct](https://github.com/smuniharish/contextsage/blob/master/CODE_OF_CONDUCT.md) in all project spaces.
 
 ## Report an issue
 
@@ -11,7 +11,7 @@ with a minimal reproduction and the expected behavior. For runtime issues,
 include the ContextSage, Python and relevant integration versions. Prefer a
 scripted model over a real provider call. Do not include API keys or private
 conversation content. Report security issues through the
-[security policy](SECURITY.md).
+[security policy](https://github.com/smuniharish/contextsage/blob/master/SECURITY.md).
 
 ## Set up the project
 
@@ -60,6 +60,10 @@ configuration.
 - Keep events and logs free of conversation content and credentials.
 - Update examples, documentation, Agent Skills and the changelog with
   behavior changes.
+- Document public interfaces, integration boundaries and operational behavior.
+  Keep diagrams conceptual where implementation detail is not needed, and
+  raise potentially sensitive disclosures for maintainer review. Public source
+  and Git history remain accessible even when documentation is simplified.
 
 ## Tests and documentation
 
@@ -91,12 +95,35 @@ Edit Mermaid sources in `diagrams/`, render them with
 
 1. Branch from `master` and keep the change focused.
 2. Update relevant tests, examples, documentation and the unreleased
-   [changelog](CHANGELOG.md) entry.
+   [changelog](https://github.com/smuniharish/contextsage/blob/master/CHANGELOG.md) entry.
 3. Run the applicable checks above and describe the results in the pull
    request.
 
 ## Release
 
-Maintainers update the project version in `pyproject.toml`, record the
-release in `CHANGELOG.md`, and run the distribution checks above before
-publishing manually.
+Releases are performed manually by a maintainer. Update the version in
+`pyproject.toml` and the skill metadata, and record the actual changes in
+`CHANGELOG.md`. Review the release commit and run the applicable checks
+before publishing.
+
+Build both the source distribution and wheel into an empty `dist` directory:
+
+```powershell
+uv build --no-sources
+uvx twine check --strict dist/*
+```
+
+Inspect the filenames and contents before uploading. For example, with the
+intended version substituted for `VERSION`:
+
+```powershell
+python -m zipfile -l dist\contextsage-VERSION-py3-none-any.whl
+python -m tarfile -l dist\contextsage-VERSION.tar.gz
+python -c "import zipfile; z=zipfile.ZipFile(r'dist\contextsage-VERSION-py3-none-any.whl'); print(z.read(next(n for n in z.namelist() if n.endswith('.dist-info/METADATA'))).decode())"
+```
+
+Once the maintainer has approved the artifacts, publish them explicitly with
+`uvx twine upload dist/*` using PyPI's supported credentials. Keep credentials
+out of the repository and shell history. Create the corresponding tag and
+GitHub release manually after verifying the published version; no workflow
+publishes packages or creates releases automatically.

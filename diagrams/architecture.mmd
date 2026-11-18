@@ -1,17 +1,10 @@
 flowchart TB
-    framework["Agent framework"] --> adapter["FrameworkAdapter"]
-    adapter --> history["contextsage.Message history"]
+    framework["Agent application"] --> adapter["FrameworkAdapter"]
+    adapter --> history["Message history"]
     history --> engine["ContextSummarizer"]
-    subgraph engine_flow["Async summarization engine"]
-        direction LR
-        trigger["Count tokens<br/>and evaluate trigger"] --> parse["Parse and analyze<br/>with parsefabric"]
-        parse --> compact["Compact structured<br/>content"]
-        compact --> summarize["Summarize older messages<br/>with LanguageModel"]
-        summarize --> validate["Validate facts<br/>and tool relationships"]
-    end
-    engine --> engine_flow
-    engine_flow --> result["SummarizationResult<br/>and rewritten history"]
-    engine_flow -. "lineage links" .-> store[("agxai ProvenanceStore")]
-    engine_flow -. "SummarizationEvent" .-> sink["EventSink"]
+    engine --> result["Rewritten history and event"]
     result --> adapter
-    adapter --> framework
+    engine -. "summary requests" .-> model["LanguageModel"]
+    engine -. "content parsing" .-> parser["parsefabric"]
+    engine -. "lineage" .-> store[("agxai ProvenanceStore")]
+    engine -. "events" .-> sink["EventSink"]

@@ -6,8 +6,8 @@ determines which deterministic compaction and preservation rules apply.
 Configure it with `ParsingOptions`:
 
 <figure class="diagram" markdown="span">
-  ![The mixed-content parser routes fenced blocks, custom routes, JSON, line patterns and code detection into typed content units.](../assets/diagrams/decomposition.png){ width="720" }
-  <figcaption>Custom routes are applied before the default JSON route.</figcaption>
+  ![Message content and parsing options feed content parsing for summarization.](../assets/diagrams/decomposition.png){ width="720" }
+  <figcaption>Parsing accepts application-supplied configuration.</figcaption>
 </figure>
 
 ```python
@@ -49,7 +49,7 @@ of loading grammars.
 
 ## Examples
 
-- [Custom parsing](../../examples/custom_parsing.py) routes SQL to a custom
+- [Custom parsing](https://github.com/smuniharish/contextsage/blob/master/examples/custom_parsing.py) routes SQL to a custom
   parser.
-- [Downstream customization](../../examples/downstream_customization.py)
+- [Downstream customization](https://github.com/smuniharish/contextsage/blob/master/examples/downstream_customization.py)
   supplies a custom JSON codec, lifecycle sink and execution backend.

@@ -40,11 +40,7 @@ import contextsage
 print(contextsage.__version__)
 ```
 
-Output:
-
-```text
-1.0.1
-```
+The output is the version installed in your environment.
 
 ## Code detection
 

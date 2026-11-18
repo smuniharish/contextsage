@@ -7,8 +7,8 @@ failures, both sides of contradictions, and repetitive content keep their
 special handling under every policy.
 
 <figure class="diagram" markdown="span">
-  ![Structural signals are protected first; other content is classified by policy thresholds and compacted according to its preservation level.](../assets/diagrams/preservation.png){ width="720" }
-  <figcaption>Preservation decisions combine structural signals and policy thresholds.</figcaption>
+  ![A preservation policy configures how message content is prepared.](../assets/diagrams/preservation.png){ width="720" }
+  <figcaption>Policies configure preservation and compaction.</figcaption>
 </figure>
 
 ## Built-in policies
@@ -41,4 +41,4 @@ class AuditPolicy(PreservationPolicy):
 
 Threshold values must be between zero and one, and `should` cannot exceed
 `must`. `error_must` is the lower threshold used for content reporting errors.
-See the [policy example](../../examples/policies.py).
+See the [policy example](https://github.com/smuniharish/contextsage/blob/master/examples/policies.py).

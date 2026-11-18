@@ -14,7 +14,7 @@ compatibility: >-
   Python 3.12 or newer. Install contextsage from PyPI; install
   contextsage[langchain] for the optional LangChain and LangGraph integration.
 metadata:
-  version: "1.0.1"
+  version: "1.0.2"
   documentation: "https://contextsage.readthedocs.io/"
 ---
 

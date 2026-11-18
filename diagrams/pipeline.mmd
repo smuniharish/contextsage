@@ -1,16 +1,5 @@
 flowchart TB
-    start(["ContextSummarizer.summarize"]) --> count["Count full history"]
-    count --> trigger{"Trigger met, or<br/>context budget exceeded?"}
+    start(["Message history"]) --> trigger{"Summarization needed?"}
     trigger -- no --> unchanged(["Return None"])
-    trigger -- yes --> parse["Parse, score and identify<br/>must-preserve facts"]
-    parse --> compact["Compact structured<br/>content by policy"]
-    compact --> older{"Messages older than<br/>the keep window?"}
-    older -- no --> compacted(["Return compacted history<br/>with event"])
-    older -- yes --> model["LanguageModel.complete"]
-    model -- "raises" --> fallback["Trim safely and add<br/>a recovery notice"]
-    fallback --> recovered(["Return fallback history<br/>with event"])
-    model --> validate{"Required facts and tool<br/>relationships preserved?"}
-    validate -- yes --> result(["Return rewritten history"])
-    validate -- "facts missing" --> restate["Restate missing facts"]
-    restate --> result
-    result --> record["Record agxai lineage<br/>and deliver event"]
+    trigger -- yes --> summarize["Prepare and summarize history<br/>when appropriate"]
+    summarize --> result(["Return rewritten history<br/>and event"])
