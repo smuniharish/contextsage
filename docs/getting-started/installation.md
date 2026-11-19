@@ -37,10 +37,11 @@ your provider's async client, or install the LangChain extra and use
 ```python
 import contextsage
 
-print(contextsage.__version__)
+assert contextsage.__version__
 ```
 
-The output is the version installed in your environment.
+A successful check produces no output. To print the installed version, run
+`python -c "import contextsage; print(contextsage.__version__)"`.
 
 ## Code detection
 

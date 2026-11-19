@@ -5,8 +5,9 @@ features and improvements.
 
 ## Unreleased
 
-Preparing version 1.0.2.
-
+- Added live PyPI download badges to the README and documentation home page.
+- Fixed the installation check example and improved preservation diagram
+  readability.
 - Simplified public architecture diagrams while retaining integration,
   configuration, validation and recovery guidance.
 - Corrected documentation links to repository examples and contributor guides.

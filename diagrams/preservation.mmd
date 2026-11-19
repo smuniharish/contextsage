@@ -1,4 +1,4 @@
 flowchart TB
-    content["Message content"] --> processing["Content preservation and compaction"]
+    content["Context message content"] --> processing["Content preservation and compaction"]
     policy["PreservationPolicy"] --> processing
     processing --> result["Prepared history"]
